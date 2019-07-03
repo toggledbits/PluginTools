@@ -293,7 +293,7 @@ Both functions will return a timer ID. There is only one purpose to this ID at t
 
 A timer can be cancelled by passing its timer ID to `PFB.timer.cancel( timerID )`.
 
-The user of these functions over the `luup.call_delay()/call_timer()` functions is highly recommended.
+The use of these functions over the `luup.call_delay()/call_timer()` functions is highly recommended.
 
 ### Device State Variable/Service Watches
 
@@ -310,13 +310,17 @@ TBD
 
 ### Logging
 
+Developing plugins will require that you write helpful diagnostic data someplace that you can get to it.
+
 The `PFB.debug(msg, ...)` and `PFB.log(msg, ...)` functions both log messages to the LuaUPnP log. The former (`debug`) only writes the message if debug is enabled (the global variable `debugMode` is set `true`).
 
 The message may contain references to additional arguments passed, identified by "%" followed by a number. When these are found in the message string, they are replaced with the text form of the indexed argument from the remaining arguments. They do not need to be used in order of the values passed. For example, `L("this is %1 and %2, or backwards %2 and %1", "alpha", "beta")` will log the string "this is alpha and beta, or backwards beta and alpha". The arguments can be any Lua data type; tables will be expanded into a human-readable pseudocode representation.
 
 ### State Variable Handling
 
-The `PFB.var.get( variableName [, dev [, serviceId]] )` function returns the value of the named state variable on the specified device from the specified service. If the service is omitted or `nil`, the plugin's service ID is assumed; if the device is omitted or `nil`, the plugin device is assumed. So, it is possible to retrieve the value of a variable belonging to the plugin device in the plugin service using only one argument, for example `PFB.var.get( "DebugMode" )`.
+The framework provides some convenience functions as alternatives to the Luup built-in `luup.variable_get()` and `luup.variable_set()`.
+
+The `PFB.var.get( variableName [, dev [, serviceId]] )` function returns the value of the named state variable on the specified device from the specified service, and the timestamp of the last modification (two values returned). If the service is omitted or `nil`, the plugin's service ID is assumed; if the device is omitted or `nil`, the plugin device is assumed. So, it is possible to retrieve the value of a variable belonging to the plugin device in the plugin service using only one argument, for example `PFB.var.get( "DebugMode" )`. Note that since this function returns two values, extra care must be taken when attempting to wrap this function in other functions like `tonumber()` (the Luup standard function has the same issue). Specifically for the case where `tonumber()` is desirable, use `PFB.var.getNumeric()` below, instead.
 
 The `PFB.var.getNumeric( variableName, defaultValue [, dev [, serviceId]] )` function returns the numeric value of a state variable. If the state variable is undefined, blank, or can't be converted to a number, the value of the `defaultValue` argument will be returned. For example, `PFB.var.getNumeric( 'Status', -1, 45, 'urn:upnp-org:serviceId:SwitchPower1' )` would get the value of the `Status` variable in the SwitchPower1 service from device 45, or if it doesn't exist, returns -1.
 
@@ -330,21 +334,23 @@ State variables store data in a persistent fashion. The value of state variables
 
 You can create your own state variables as needed by your plugin.
 
-1. When creating a new state variable, be sure to initialize it in runOnce() or start().
-1. Declare state variables that should be "public" or may be useful outside the plugin in your plugin's service file (S_.xml).
-1. **DO NOT** create state variables using other services--only create new variables in services you create and own as well, no matter what device you create it on. For example, it would be incorrect for your plugin to store some special data about a switch that it supervises using a new `MyData` variable in the `urn:upnp-org:serviceId:SwitchPower1` service (that is not a standard variable defined by the SwitchPower1 service). You can go ahead and use the `MyData` variable name, but use a service Id that's defined by your plugin instead.
+1. When creating a new state variable, be sure to initialize it in your `runOnce()` or `start()` code.
+1. Declare state variables that should be "public" (e.g. contain data that may be useful outside of the plugin) in your plugin's service file (`S_.xml`).
+1. **DO NOT** create new state variables using other services--only create new variables in services you create and own as well, no matter what device you create it on. For example, it would be incorrect for your plugin to store some special data about a switch that it supervises in a new `MyData` variable in the `urn:upnp-org:serviceId:SwitchPower1` service--that is not a standard variable defined by the SwitchPower1 service. You can go ahead and use the `MyData` variable name, but use a service Id that's defined by your plugin instead.
 
 ## Defining New Service Actions
 
-The `S_PluginBasic1.xml` file defines the actions of the plugin's own service--it is the plugin service's service file. By default, it contains only an example action called `Example`, and a function to enable or disable debug logging, called `SetDebug`.
+The service file (`S_.xml`) defines the actions of the related service. Since your plugin has its own service, that's the file in which you can declare your plugin-specific actions. By default, it contains only an example action called `Example`, and a framework action to set the debug/logging level called `SetLogLevel`.
 
 If you want to create a new action in the plugin service, you must add its declaration in the plugin service's service file. The steps are pretty straightforward:
 1. Decide on a name for the new action;
 1. Declare the new action in the service file;
-  * Must include the `name` tag with the action name;
-  * Must include the `argumentList` tag, and enumerate arguments the action takes (it can be empty if there are none);
-  * Each `argument` in the `argumentList` must contain `name` and `direction` tags. It is recommended/best-practice to always use `relatedStateVariable` as well. the related variable *must* be declared in the `stateVariables` section of the service file. If there is no related state variable, the A_ARG_TYPE_nnnn variable may be used/added, where nnnn is the UPnP data type (e.g. string, boolean, i4, ui4, i2, ui2, i1, ui1, r4) of the argument.
+   * Must include the `name` tag with the action name; 
+   * Must include the `argumentList` tag, and enumerate arguments the action takes (it can be empty if there are none);
+   * Each `argument` in the `argumentList` must contain `name` and `direction` tags. It is recommended/best-practice to always use `relatedStateVariable` as well. the related variable *must* be declared in the `stateVariables` section of the service file. If there is no related state variable, the A_ARG_TYPE_nnnn variable may be used/added, where nnnn is the UPnP data type (e.g. string, boolean, i4, ui4, i2, ui2, i1, ui1, r4) of the argument.
 1. Provide an implementation of the action (next section).
+
+**Do not modify any service file in `/etc/cmh-lu` (the directory where Vera's defined services are kept), or the service file of any plugin you don't own.** For example, you must not create new actions for `SwitchPower1` service; that's a standard service, and it's untouchable.
 
 ## Implementing Service Actions 
 
