@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!-- D_PluginBasic1.xml -->
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+	<specVersion>
+		<major>1</major>
+		<minor>0</minor>
+	</specVersion>
+	<device>
+		<deviceType>urn:schemas-YOURDOMAIN-NAME:device:PluginBasic:1</deviceType>
+		<staticJson>D_PluginBasic1.json</staticJson>
+		<friendlyName>PluginBasic</friendlyName>
+		<manufacturer></manufacturer>
+		<manufacturerURL></manufacturerURL>
+		<modelDescription></modelDescription>
+		<modelName></modelName>
+		<handleChildren>0</handleChildren>
+		<Category_Num>1</Category_Num>
+		<Subcategory_Num>0</Subcategory_Num>
+		<serviceList>
+			<service>
+				<serviceType>urn:schemas-YOURDOMAIN-NAME:service:PluginBasic:1</serviceType>
+				<serviceId>urn:YOURDOMAIN-NAME:serviceId:PluginBasic1</serviceId>
+				<SCPDURL>S_PluginBasic1.xml</SCPDURL>
+			</service>
+		</serviceList>
+		<implementationList>
+			<implementationFile>I_PluginBasic1.xml</implementationFile>
+		</implementationList>
+	</device>
+</root>

@@ -1,0 +1,437 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- I_PluginBasic1.xml -->
+<implementation>
+    <functions>
+        --[[ ------------------------------------------------------------------
+        Basic Plugin Framework
+        YOURDOMAIN-NAME -- global change this string to your domain name (lower
+                           case) in all files. If you don't own an Internet
+                           domain name, use "yourveracommunityname-vera".
+                           DO NOT USE micasaverde-com, upnp-org, futzle-com,
+                           toggledbits-com, etc. as that is highjacking of 
+                           others' namespace!
+        *** REFER TO THE README.md FILE FOR IMPORTANT INFO BEFORE MODIFYING ***
+        ------------------------------------------------------------------ --]]
+
+        local pluginModuleName = "L_PluginBasic1" -- !!! Modify this to match the Lua main module name for the plugin (no .lua suffix here!)
+
+        --[[ ===== D O   N O T   M O D I F Y   B E L O W   T H I S   L I N E --]]
+
+        local _fpm
+        local logLevels = { ERR=1, ERROR=1, WARN=2, WARNING=2, NOTICE=3, INFO=4, DEBUG1=5, DEBUG2=6, 
+                            err=1, error=1, warn=2, warning=2, notice=3, info=4, debug1=5, debug2=6, 
+                            DEFAULT=4, default=4,
+                            [1]='err', [2]='warn', [3]='notice', [4]='info', [5]='debug1', [6]='debug2' }
+
+        -- Used for output of tables to debug stream
+        local function dump(t, seen)
+            if t == nil then return "nil" end
+            seen = seen or {}
+            local sep = ""
+            local str = "{ "
+            for k,v in pairs(t) do
+                local val
+                if type(v) == "table" then
+                    if seen[v] then val = "(recursion)"
+                    else
+                        seen[v] = true
+                        val = dump(v, seen)
+                    end
+                elseif type(v) == "string" then
+                    val = string.format("%q", v)
+                else
+                    val = tostring(v)
+                end
+                str = str .. sep .. k .. "=" .. val
+                sep = ", "
+            end
+            str = str .. " }"
+            return str
+        end
+
+        -- Write a message to the log
+        function L(level, msg, ...)
+            if type(level) == "string" then level = logLevels[level] or logLevels['notice'] end
+            if (level or logLevels['notice']) &lt;= (PFB.loglevel or logLevels['notice']) then
+                local str
+                local ll = level == logLevels['err'] and 1 or ( level == logLevels['warn'] and 2 or 50 )
+                if type(msg) == "table" then
+                    str = tostring(msg.prefix or pluginName) .. ": " .. tostring(msg.msg)
+                    ll = msg.level or ll
+                else
+                    str = string.format( "[%s] %s: %s", logLevels[level] or '?', tostring(pluginName), tostring(msg) )
+                end
+                str = string.gsub(str, "%%(%d+)", function( n )
+                        n = tonumber(n, 10)
+                        if n &lt; 1 or n &gt; #arg then return "nil" end
+                        local val = arg[n]
+                        if type(val) == "table" then
+                            return dump(val)
+                        elseif type(val) == "string" then
+                            return string.format("%q", val)
+                        elseif type(val) == "number" and math.abs(val-os.time()) &lt;= 86400 then
+                            return tostring(val) .. "(" .. os.date("%x.%X", val) .. ")"
+                        end
+                        return tostring(val)
+                    end
+                )
+                luup.log(str, ll)
+            end
+        end
+
+        local function P(msg, ...) if pluginFlags.debug then L('notice', {msg=msg,prefix="[Plugin".."Bas".."ic]"},...) end end
+
+        -- Get variable value (easy to go directly to luup, here just for consistency)
+        local function getVar( var, dev, sid )
+            return luup.variable_get( sid or _fpm.MYSID, var, dev or PFB.device )
+        end
+
+        -- Get numeric variable, or return default value if unset/empty/non-numeric
+        local function getVarNumeric( name, dflt, dev, sid )
+            sid = sid or _fpm.MYSID -- use MYSID if sid not passed
+            dev = dev or PFB.device -- use PFB.device if dev not passed
+            local s = luup.variable_get( sid, name, dev ) or ""
+            if s == "" then return dflt end
+            return tonumber(s) or dflt
+        end
+
+        -- Initialize a variable if it does not already exist.
+        local function initVar( name, dflt, dev, sid )
+            sid = sid or _fpm.MYSID -- use MYSID if sid not passed
+            dev = dev or PFB.device -- use PFB.device if dev not passed
+            local currVal = luup.variable_get( sid, name, dev )
+            if currVal == nil then
+                luup.variable_set( sid, name, tostring(dflt), dev )
+                return tostring(dflt)
+            end
+            return currVal
+        end
+
+        -- Set variable, only if value has changed.
+        local function setVar( name, val, dev, sid )
+            sid = sid or _fpm.MYSID -- use MYSID if sid not passed
+            dev = dev or PFB.device -- use PFB.device if dev not passed
+            val = (val == nil) and "" or tostring(val)
+            local s = luup.variable_get( sid, name, dev )
+            if s ~= val then
+                luup.variable_set( sid, name, val, dev )
+            end
+            return s -- return old value
+        end
+
+        -- Delete a state variable. Newer versions of firmware do this by setting nil;
+        -- older versions require a request (not implemented here).
+        local function deleteVar( name, dev, sid )
+            sid = sid or _fpm.MYSID -- use MYSID if sid not passed
+            dev = dev or PFB.device -- use PFB.device if dev not passed
+            if luup.variable_get( sid, name, dev ) then
+                luup.variable_set( sid, name, nil, dev )
+            end
+        end
+
+        -- Find next timer to fire
+        local function findNextTimer()
+            local mintimer
+            for _,t in pairs( pluginTimers ) do
+                if t.id ~= "master" and ( mintimer == nil or t.when &lt; mintimer.when ) then mintimer = t end
+            end
+            P("findNextTimer() next is %1", mintimer)
+            return mintimer
+        end
+
+        -- (Re)schedule next master tick
+        local function scheduleNextDelayRun()
+            P("scheduleNextDelayRun()")
+            local mintimer = findNextTimer()
+            if mintimer then
+                if pluginTimers.master and ( pluginTimers.master.when == 0 or mintimer.when &gt;= pluginTimers.master.when ) then
+                    -- Master not waiting (execTimers is running) or next eligible later than current
+                    -- master tick, don't reschedule.
+                    P("scheduleNextDelayRun() in exec or new timer past master, not rescheduling")
+                    return
+                end
+                local delay = math.max( mintimer.when - os.time(), 0 )
+                pluginMasterSerial = pluginMasterSerial + 1
+                pluginTimers.master = { id="master", when=os.time()+delay, serial=pluginMasterSerial }
+                P("scheduleNextDelayRun() master tick now serial %1 scheduled for %2; master=%3", pluginMasterSerial, delay, master)
+                luup.call_delay( '_DelayCb', delay, tostring( pluginMasterSerial) )
+            end
+            P("All current timers: %1", pluginTimers)
+        end
+
+        -- Schedule a function for delayed execution. Creates a new timer.
+        local function pluginTimer( seconds, func, ... )
+            P("pluginTimer(%1,%2,...)", seconds, func)
+            if seconds &lt; 0 then seconds = 0 end
+            local pid = string.format("d-%x",  pluginNextTID )
+            pluginNextTID = pluginNextTID + 1
+            pluginTimers[pid] = { id=pid, when=os.time()+seconds, func=func, args=arg }
+            scheduleNextDelayRun()
+            return pid
+        end
+
+        -- Set up an interval on a recurring timer.
+        local function pluginInterval( seconds, func, ... )
+            P("pluginInterval(%1,%2,...)", seconds, func)
+            local pid = pluginTimer( seconds, func, ... )
+            pluginTimers[pid].interval = seconds
+            return pid
+        end
+
+        local function nulltimer() L('warn', "Timer task has no callback function") end
+
+        -- Run eligible timers
+        local function execTimers( lcbparm )
+            P("execTimers(%1)", lcbparm)
+            pluginTimers.master.when = 0 -- flag not waiting
+            local run = {}
+            local now = os.time()
+            for _,v in pairs( pluginTimers ) do
+                if v.id ~= "master" and v.when &lt;= now then
+                    table.insert( run, v.id )
+                end
+            end
+            -- Sort by time
+            table.sort( run, function( a, b ) return pluginTimers[a].when &lt; pluginTimers[b].when end )
+            P("execTimers() found %1 eligible timers to run: %2", #run, run)
+            for _,id in ipairs( run ) do
+                local v = pluginTimers[id]
+                local st = os.time()
+                P("execTimers() running timer %1 due %2 late %3", v.id, v.when, os.time()-v.when)
+                local success, err = pcall( v.func or nulltimer, unpack( v.args or {} ) )
+                if not success then L('err', "Timer task %1 failed: %2", v.id, err) end
+                local rt = os.time() - st
+                if not v.interval then
+                    pluginTimers[v.id] = nil
+                else
+                    if rt &gt;= v.interval then L('warn', "Interval task %1 took longer to execute (%2s) than interval (%3s)", v.id, rt, v.interval) end
+                    while v.when &lt;= now do v.when = v.when + v.interval end -- improve: use maths
+                end
+            end
+            local nextTimer = findNextTimer()
+            if not nextTimer then
+                -- Nothing more to run. Remove master tick.
+                pluginTimers.master = nil
+                return
+            end
+            -- Schedule next delay for next task.
+            local delay = math.max( nextTimer.when - os.time(), 0 )
+            luup.call_delay( '_DelayCb', delay, lcbparm )
+        end
+
+        local function cancelTimer( delayId )
+            pluginTimers[tostring(delayId)] = nil
+        end
+
+        -- Place watch on a device state variable
+        local function pluginDeviceWatch( dev, sid, var, func, ... )
+            P("pluginWatch(%1,%2,%3)", dev, sid, var)
+            local key = string.format( "%s/%s/%s", tostring(dev), tostring(sid), tostring(var))
+            P("key is %1", key)
+            if not pluginWatches[key] then
+                P("Watching %1", key)
+                luup.variable_watch( "_WatchCb", sid, var, dev )
+                pluginWatches[key] = {}
+            end
+            local fkey = string.format( "%d:%s", PFB.device, tostring(func) )
+            P("subscribing %1 to %2", fkey, key)
+            pluginWatches[key][fkey] = { id=key, dev=PFB.device, func=func, args=arg }
+        end
+
+        -- Remove watch on device state variable
+        local function pluginDeviceWatchClear( dev, sid, var )
+            local key = string.format( "%s/%s/%s", tostring(dev), tostring(sid), tostring(var))
+            local del = {}
+            for _,v in pairs( pluginWatches[key] or {} ) do
+                if v.dev == PFB.device then
+                    table.insert( del, v.id )
+                end
+            end
+            for _,v in ipairs( del ) do pluginWatches[key][v] = nil end
+        end
+
+        local function pluginIsOpenLuup()
+            if pluginFlags.openluup == nil then
+                pluginFlags.openluup = false
+                for _,v in pairs( luup.devices ) do
+                    if v.device_type == "openLuup" and v.device_num_parent == 0 then
+                        pluginFlags.openluup = true
+                    end
+                end
+            end
+            return pluginFlags.openluup
+        end
+
+        function pluginSetLogLevel( pdev, parms )
+            P("actionSetLogLevel(%1,%2)", pdev, parms)
+            PFB.loglevel = tonumber( parms.NewLogLevl ) or PFB.LOGLEVEL[parms.NewLogLevel] or PFB.LOGLEVEL.DEFAULT
+            setVar( pluginSID, "LogLevel", PFB.loglevel, pdev )
+        end
+
+        function pluginStart(dev)
+            if pluginFlags.debug then luup.log("Using PluginFrameworkBasic "..PFB.VERSION.." (rigpapa) https://github.com/toggledbits/PluginTools") end
+            L('notice', "starting device #%1", dev)
+
+            PFB.device = dev
+            initVar( "LogLevel", PFB.LOGLEVEL.DEFAULT, dev, pluginSID )
+            PFB.loglevel = getVarNumeric( "LogLevel", PFB.LOGLEVEL.DEFAULT, dev, pluginSID )
+            pluginDevice = dev
+            pluginWatches = {}
+            pluginTimers = {}
+
+            if setVar("Configured", "1") ~= "1" then
+                P("one-time initialization for %1", dev)
+                initVar( "DebugMode", 0 )
+                _fpm.runOnce( dev )
+            end
+
+            if getVarNumeric( "DebugMode", 0 ) ~= 0 then
+                PFB.loglevel = logLevels['debug1']
+                L(logLevels['debug1'], "Plugin debug enabled by state variable DebugMode")
+            end
+
+            -- Check firmware version
+            local vok,msg = _fpm.checkVersion( dev )
+            if vok == false then
+                L('err', msg or "This plugin does not run on this firmware.")
+                luup.set_failure( 1, dev )
+                return false, msg or "Incompatible firmware", _fpm._PLUGIN_NAME
+            end
+
+            -- Register plugin request handler
+            luup.register_handler("_RequestCb", pluginReqName)
+
+            local success,ret,msg = pcall( _fpm.start, dev )
+            if not success then
+                L({level=1,msg="Startup implementation failed: %1"}, ret)
+                luup.set_failure( 1, dev )
+                return false, "Startup implementation failed", _fpm._PLUGIN_NAME
+            end
+            luup.set_failure( 0, dev )
+            return ret ~= false, msg or "", _fpm._PLUGIN_NAME
+        end
+
+        -- _WatchCb is the callback function that will dispatch to the module
+        function _WatchCb( dev, svc, var, oldVal, newVal )
+            P("_WatchCb(%1,%2,%3,%4,%5)", dev, svc, var, oldVal, newVal)
+            local key = string.format( "%d/%s/%s", dev, svc, var )
+            for _,d in pairs( pluginWatches[key] or {} ) do
+                P("_WatchCb() dispatching watch event %1 to %2", d.id, d.dev)
+                local success,err = pcall( d.func, dev, svc, var, oldVal, newVal, d.dev, unpack( d.args or {} ) )
+                if not success then
+                    L({level=1,msg="Watch handler failed: %1"}, err)
+                end
+            end
+        end
+
+        -- _DelayCb is the callback function that will dispatch to the module
+        function _DelayCb( parm )
+            P("_DelayCb(%1)", parm)
+            if tonumber( parm ) ~= pluginMasterSerial then
+                P("_DelayCb() another timer sequence has started (that's OK); serial expected %1 got %2", pluginMasterSerial, parm)
+                return
+            end
+            execTimers( parm )
+        end
+
+        -- _RequestCb is the request handler; hands off to module function
+        function _RequestCb( req, parms, of )
+            P("_RequestCb(%1,%2,%3)", req, parms, of)
+            -- Built-in handler for turning debug on and off.
+            if parms.debug then
+                local n = tonumber( parms.debug )
+                if n then
+                    debugMode=n~=0
+                else
+                    debugMode=not debugMode
+                end
+                return '{"debug":'..tostring(debugMode)..',"PFB":'..PFB.VERSION..'}','application/json'
+            end
+            if type( _fpm.handleRequest ) ~= "function" then return "ERROR\r\nRequest handler not implemented", "text/plain" end
+            return _fpm.handleRequest( req, parms, of, pluginDevice )
+        end
+
+        local function pluginJobWatch( devnum, jobnum, func, ... ) 
+            P("pluginJobWatch(%1,%2,%3,...)", devnum, jobnum, func)
+            local key = tostring( "%s;%s;%s", tostring(devnum), tostring(jobnum), tostring( func ) )
+            if not next(pluginJobs or {}) then
+                pluginJobs = {}
+                luup.job_watch( '_JobCb' ) -- no device filter
+            end
+            pluginJobs[key] = { id=key, device=devnum, jobnum=jobnum, func=func, args=arg }
+        end
+
+        function _JobCb( jbt )
+            P("_JobCb(%1)", jbt)
+            for _,d in pairs( pluginJobs or {} ) do
+                if ( d.device==nil or d.device==jbt.device_num ) then
+                    local s,e = pcall( d.func, tonumber(jbt.notes) or nil, jbt, unpack( d.args or {} ) )
+                    if not s then
+                        L('err', "Job watch handler threw an error: %1; job data=%2", e, jbt)
+                    end
+                end
+            end
+        end
+
+        -- Exports for standard objects
+        PFB = {}
+        PFB.VERSION = 19184
+        PFB.device = false
+        PFB.log = L
+        PFB.LOGLEVEL = logLevels
+        PFB.loglevel = PFB.LOGLEVEL.DEFAULT
+        PFB.var = { get=getVar, getNumeric=getVarNumeric, set=setVar, init=initVar, delete=deleteVar }
+        PFB.delay = { once=pluginTimer, interval=pluginInterval, cancel=pluginCancelTimer }
+        PFB.watch = { set=pluginDeviceWatch, clear=pluginDeviceWatchClear }
+        PFB.job = { watch=pluginJobWatch, clear=pluginJobWatchClear, register=pluginTagJob }
+        PFB.isOpenLuup = pluginIsOpenLuup
+        
+        -- Expansion objects will go here
+
+        -- Load plugin implementation module
+        _,_fpm = pcall( require, pluginModuleName )
+        -- if not package.loaded[pluginModuleName] then
+        if type( _fpm ) ~= "table" then
+            error( "Cannot load plugin implementation module "..pluginModuleName..": ".._tostring(_fpm) )
+        end
+
+        debugMode = false
+        pluginDevice = nil
+
+        pluginWatches = {}
+        pluginTimers = {}
+        pluginNextTID = 0
+        pluginMasterSerial = 0
+        pluginFlags = { debug=true }
+        pluginName = _fpm._PLUGIN_NAME
+        pluginIdent = _fpm._PLUGIN_COMPACT or _fpm._NAME:gsub("^L_", ""):gsub("1$", "")
+        pluginReqName = _fpm._PLUGIN_REQUESTNAME or pluginIdent
+        pluginSID = _fpm.MYSID or "urn:YOURDOMAIN-NAME:serviceId:PluginBasic1"
+
+        --[[ ===== D O   N O T   M O D I F Y   A B O V E   T H I S   L I N E --]]
+    </functions>
+    <startup>pluginStart</startup><!-- DO NOT MODIFY -->
+    <actionList>
+        <!-- !!! Place your actions here. Generally, action implementations should be as small
+             as possible, ideally just a call to a module function... -->
+         <action>
+            <serviceId>urn:YOURDOMAIN-NAME:serviceId:PluginBasic1</serviceId>
+            <name>Example</name>
+            <run>
+                -- This is about all you should ever need in this file--just pass it on!
+                -- Your loaded module is stored in _fpm
+                return _fpm.actionExample( lul_device, lul_settings )
+                -- alternately, you could use this syntax, using the module name directly
+                -- return L_PluginBasic1.actionExample( lul_device, lul_settings )
+            </run>
+        </action>
+        <!-- SetLogLevel -- defined in default service, DO NOT REMOVE -->
+        <action>
+            <serviceId>urn:YOURDOMAIN-NAME:serviceId:PluginBasic1</serviceId>
+            <name>SetLogLevel</name>
+            <run>
+                return pluginSetDebug( lul_device, lul_settings ) -- note this is a local function
+            </run>
+        </action>
+    </actionList>
+</implementation>

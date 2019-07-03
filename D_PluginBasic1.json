@@ -1,0 +1,83 @@
+{
+	"default_icon": "keypad.png",
+	"x": "2",
+	"y": "4",
+	"inScene": "1",
+	"Tabs": [{
+			"Label": {
+				"lang_tag": "tabname_control",
+				"text": "Control"
+			},
+			"Position": "0",
+			"TabType": "flash",
+			"ControlGroup": [{
+				"id": "1",
+				"scenegroup": "1"
+			}],
+			"SceneGroup": [{
+				"id": "1",
+				"top": "0",
+				"left": "0",
+				"x": "1",
+				"y": "1"
+			}],
+			"Control": [{
+				"ControlGroup": 1,
+				"ControlType": "variable",
+				"top": 1,
+				"left": 0,
+				"Display": {
+					"Top": 8,
+					"Left": 8,
+					"Width": 240,
+					"Height": 25,
+					"Service": "urn:YOURDOMAIN-NAME:serviceId:PluginBasic1",
+					"Variable": "ExampleVariable"
+				},
+				"ControlCode": "examplevariable"
+			}]
+		},
+		{
+			"Label": {
+				"lang_tag": "ui7_advanced",
+				"text": "Advanced"
+			},
+			"Position": "1",
+			"TabType": "javascript",
+			"ScriptName": "shared.js",
+			"Function": "advanced_device"
+		},
+		{
+			"Label": {
+				"lang_tag": "ui7_logs",
+				"text": "Logs"
+			},
+			"Position": "2",
+			"TabType": "javascript",
+			"ScriptName": "shared.js",
+			"Function": "device_logs"
+		},
+		{
+			"Label": {
+				"lang_tag": "ui7_notifications",
+				"text": "Notifications"
+			},
+			"Position": "3",
+			"TabType": "javascript",
+			"ScriptName": "shared.js",
+			"Function": "device_notifications"
+		},
+		{
+			"Label": {
+				"lang_tag": "ui7_device_scenes",
+				"text": "Scenes"
+			},
+			"Position": "4",
+			"TabType": "javascript",
+			"ScriptName": "shared.js",
+			"Function": "device_scenes"
+		}
+	],
+	"eventList2": [],
+	"device_type": "urn:schemas-YOURDOMAIN-NAME:device:PluginBasic:1"
+}

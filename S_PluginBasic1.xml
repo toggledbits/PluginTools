@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<!-- S_PluginBasic1.xml -->
+<scpd xmlns="urn:schemas-upnp-org:service-1-0">
+	<specVersion>
+		<major>1</major>
+		<minor>0</minor>
+	</specVersion>
+	<serviceStateTable>
+		<!-- Actual state variables defined and used by this plugin -->
+		<stateVariable sendEvents="yes">
+			<name>ExampleVariable</name>
+			<dataType>i4</dataType>
+			<defaultValue>72</defaultValue>
+			<shortCode>example</shortCode>
+		</stateVariable>
+		<!-- Plugin debug mode; do not remove -->
+		<stateVariable sendEvents="no">
+			<name>LogLevel</name>
+			<dataType>ui1</dataType>
+			<defaultValue>4</defaultValue>
+		</stateVariable>
+		<!-- Type state variables--don't actually exist, used for type
+		     declaration of action arguments where there is no actual related
+			 state variable. -->
+		<stateVariable sendEvents="no">
+			<name>A_ARG_TYPE_boolean</name>
+			<dataType>boolean</dataType>
+		</stateVariable>
+		<stateVariable sendEvents="no">
+			<name>A_ARG_TYPE_string</name>
+			<dataType>string</dataType>
+		</stateVariable>
+		<stateVariable sendEvents="no">
+			<name>A_ARG_TYPE_ui4</name>
+			<dataType>ui4</dataType>
+		</stateVariable>
+		<stateVariable sendEvents="no">
+			<name>A_ARG_TYPE_i4</name>
+			<dataType>i4</dataType>
+		</stateVariable>
+	</serviceStateTable>
+	<actionList>
+		<!-- An example action -->
+		<action>
+			<name>Example</name>
+			<argumentList>
+				<argument>
+					<name>newValue</name>
+					<direction>in</direction>
+					<relatedStateVariable>ExampleVariable</relatedStateVariable>
+				</argument>
+				<argument>
+					<name>forced</name>
+					<direction>in</direction>
+					<relatedStateVariable>A_ARG_TYPE_boolean</relatedStateVariable>
+				</argument>
+			</argumentList>
+		</action>
+		<!-- SetLogLevel; do not remove -->
+		<action>
+			<name>SetLogLevel</name>
+			<argumentList>
+				<argument>
+					<name>NewLogLevel</name>
+					<direction>in</direction>
+					<relatedStateVariable>LogLevel</relatedStateVariable>
+				</argument>
+			</argumentList>
+		</action>
+	</actionList>
+</scpd>
