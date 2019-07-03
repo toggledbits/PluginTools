@@ -447,7 +447,7 @@ At this point, you should have a pretty good idea of how this all hangs together
 
 ## Reference
 * `PFB.VERSION`
-  The current version of the Plugin Framework Basic
+   The current version of the Plugin Framework Basic
 * `PFB.device`
   The device number of the plugin instance currently running
 
