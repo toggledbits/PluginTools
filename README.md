@@ -287,6 +287,7 @@ luup.call_action( 'urn:upnp-org:serviceId:SwitchPower1', 'SetTarget', { newTarge
 PFB.timer.once( 5, function() 
 	luup.call_action( 'urn:upnp-org:serviceId:SwitchPower1', 'SetTarget', { newTargetValue="0" }, 123 )
 end )
+```
 
 Both functions will return a timer ID. There is only one purpose to this ID at this time: to cancel a timer.
 
