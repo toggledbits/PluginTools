@@ -450,34 +450,16 @@ Function | Description
 -------- | -----------
 `PFB.VERSION` | The current version of the Plugin Framework Basic
 `PFB.device` | The device number of the plugin instance currently running
--- | --
 `PFB.log( level, message, ... )` | Log a message to the log stream. The `level` argument can be selected from `PFB.LOGLEVEL`. The message is not logged if the `level` is less critical than the current value of `PFB.loglevel`. The message argument may contain position parameters, identified by a "%" character followed by a number; the corresponding extra argument (from among the ...) is inserted at that position in the output message.
-
-* `PFB.LOGLEVEL`
-  A table of constants for the various log levels. Includes (upper- and lowercase): ERR, WARN, NOTICE, INFO, DEBUG1, DEBUG2. These are used to pass to `PFB.log()` or set `PFB.loglevel`. The DEFAULT key is the default logging level for the framework (currently == INFO).
-* `PFB.loglevel`
-  The current logging level. Messages less critical than this level will not be output to the log stream.
-  
-* `PFB.var.getVar( variableName [, device [, serviceId ] ] )`
-  Returns (two values) the current value and timestamp of the named state variable. May be called with 1-3 arguments; if `device` is omitted or `nil`, the plugin device is assumed. if `serviceId` is omitted or `nil`, the plugin's service is assumed.
-* `PFB.var.getVarNumeric( variableName, defaultValue [, device [, serviceId ] ] )`
-  Returns the numeric value of the named state variable. If the state variable is not defined, or its value blank or non-numeric, the value of `defaultValue` is returned. The `device` and `serviceId` parameters are optional and default as they do in `getVar()`.
-* `PFB.var.setVar( variableName, value [, device [, serviceId ] ] )`
-  Sets the value of the named state variable to the value given, and returns the prior value. The `device` and `serviceId` parameters are optional and default as they do in `getVar()`.
-* `PFB.var.initVar( variableName, defaultValue [, device [, serviceId ] ] )`
-  Like setVar, but does *not* set the state variable if it already exists. Used for one-time initialization, primarily.
-  
-* `PFB.timer.once( seconds, func, ... )`
-  Run a one-time timer for the specified number of seconds; upon its expiration, call the *function reference* (not a string) provided in `func` with any remaining arguments passed through. Returns a timer ID, which may be used to cancel the timer before its expiration by calling `PFB.timer.cancel()`.
-* `PFB.timer.interval( seconds, func, ... )`
-  Like `PFB.timer.once()` in every respect, except that the timer recurs on the interval provided automatically until cancelled.
-* `PFB.timer.cancel( timerID )`
-  Cancel the timer identified by `timerID`.
-  
-* `PFB.watch.set( device, serviceId, variableName, func, ... )`
-  Places a watch on the named state variable on the device. When it changes, the function (a *function reference*, not a string) will be called with the extra arguments passed through. If the `variableName` is `nil`, changes to any variable in the service on the device will trigger a call to the function/handler.
-* `PFB.watch.cancel( device, serviceId, variableName [, func ] )
-  Cancel a watch on a device state variable. If `func` is specified, only the watch that calls the function (passed by reference) is cancelled; otherwise, all watches for the device/state are cancelled.
-
-* `PFB.isOpenLuup()`
-  Returns `true` if running under openLuup, `false` otherwise.
+`PFB.LOGLEVEL` | A table of constants for the various log levels. Includes (upper- and lowercase): ERR, WARN, NOTICE, INFO, DEBUG1, DEBUG2. These are used to pass to `PFB.log()` or set `PFB.loglevel`. The DEFAULT key is the default logging level for the framework (currently == INFO).
+`PFB.loglevel` | The current logging level. Messages less critical than this level will not be output to the log stream.
+`PFB.var.getVar( variableName [, device [, serviceId ] ] )` | Returns (two values) the current value and timestamp of the named state variable. May be called with 1-3 arguments; if `device` is omitted or `nil`, the plugin device is assumed. if `serviceId` is omitted or `nil`, the plugin's service is assumed.
+`PFB.var.getVarNumeric( variableName, defaultValue [, device [, serviceId ] ] )` | Returns the numeric value of the named state variable. If the state variable is not defined, or its value blank or non-numeric, the value of `defaultValue` is returned. The `device` and `serviceId` parameters are optional and default as they do in `getVar()`.
+`PFB.var.setVar( variableName, value [, device [, serviceId ] ] )` | Sets the value of the named state variable to the value given, and returns the prior value. The `device` and `serviceId` parameters are optional and default as they do in `getVar()`.
+`PFB.var.initVar( variableName, defaultValue [, device [, serviceId ] ] )` | Like setVar, but does *not* set the state variable if it already exists. Used for one-time initialization, primarily.
+`PFB.timer.once( seconds, func, ... )` | Run a one-time timer for the specified number of seconds; upon its expiration, call the *function reference* (not a string) provided in `func` with any remaining arguments passed through. Returns a timer ID, which may be used to cancel the timer before its expiration by calling `PFB.timer.cancel()`.
+`PFB.timer.interval( seconds, func, ... )` | Like `PFB.timer.once()` in every respect, except that the timer recurs on the interval provided automatically until cancelled.
+`PFB.timer.cancel( timerID )` | Cancel the timer identified by `timerID`.
+`PFB.watch.set( device, serviceId, variableName, func, ... )` | Places a watch on the named state variable on the device. When it changes, the function (a *function reference*, not a string) will be called with the extra arguments passed through. If the `variableName` is `nil`, changes to any variable in the service on the device will trigger a call to the function/handler.
+`PFB.watch.cancel( device, serviceId, variableName [, func ] ) | Cancel a watch on a device state variable. If `func` is specified, only the watch that calls the function (passed by reference) is cancelled; otherwise, all watches for the device/state are cancelled.
+`PFB.isOpenLuup()` | Returns `true` if running under openLuup, `false` otherwise.
