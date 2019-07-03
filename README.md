@@ -289,9 +289,11 @@ PFB.timer.once( 5, function()
 end )
 ```
 
-Both functions will return a timer ID. There is only one purpose to this ID at this time: to cancel a timer.
+Both functions will return a timer ID. There is only one purpose to this ID at this time: to cancel a timer. 
 
 A timer can be cancelled by passing its timer ID to `PFB.timer.cancel( timerID )`.
+
+You can run as many timers as you wish. The framework manages the scheduling of all of the timers and ensures that they are run as close to on time as Luup and the OS will permit. When two timers expire at the same time, their handler functions are run serially, and the order of their execution is non-deterministic (that is, there's no telling which will execute first). 
 
 The use of these functions over the `luup.call_delay()/call_timer()` functions is highly recommended.
 
@@ -350,13 +352,11 @@ If you want to create a new action in the plugin service, you must add its decla
    * Each `argument` in the `argumentList` must contain `name` and `direction` tags. It is recommended/best-practice to always use `relatedStateVariable` as well. the related variable *must* be declared in the `stateVariables` section of the service file. If there is no related state variable, the A_ARG_TYPE_nnnn variable may be used/added, where nnnn is the UPnP data type (e.g. string, boolean, i4, ui4, i2, ui2, i1, ui1, r4) of the argument.
 1. Provide an implementation of the action (next section).
 
-**Do not modify any service file in `/etc/cmh-lu` (the directory where Vera's defined services are kept), or the service file of any plugin you don't own.** For example, you must not create new actions for `SwitchPower1` service; that's a standard service, and it's untouchable.
+**Do not modify any service file in `/etc/cmh-lu` (the directory where Vera's defined services are kept), or the service file of any plugin you don't own.** For example, you must not create new actions for the `SwitchPower1` service; that's a standard service, and it's untouchable.
 
 ## Implementing Service Actions 
 
-Your plugin must provide an implementation for all service actions it is capable of performing in services it declares. This includes all actions defined by the plugin's own service, but also may include other services named in the device file (D_.xml). For example, if your plugin declares that it implements the `urn:upnp-org:serviceId:SwitchPower1`
-service to provide the capabilities/behaviors of a common binary switch, it should provide an implementation for `SetTarget` (the most commonly-used action in that service), and any
-other actions of that service that it can.
+Your plugin must provide an implementation for all service actions it is capable of performing in services it declares. This includes all actions defined by the plugin's own service, but also may include other services named in the device file (D_.xml). For example, if your plugin declares that it *supports* the `urn:upnp-org:serviceId:SwitchPower1` service (that is, it can emulate the standard behaviors of a binary switch), it should provide an implementation for `SetTarget` (the most commonly-used action in that service), and any other actions of that service that it can perform.
 
 To implement an action:
 1. Make sure the service to which the action belongs is declared in the plugin's device file (D_.xml).
@@ -364,7 +364,9 @@ To implement an action:
 1. Declare the implementation in the implementation file's `actionList` section. Add an `action` tag, and inside it, add a `serviceId` tag containing the full service ID of the action, a `name` tag containing the name of the action, and a `run` and/or `job` tag containing an implementation stub that hands control to a handler function you create in `L_PluginBasic1.lua`.
 1. In `L_PluginBasic1.lua`, create a handler function for the action and provide the action implementation within in. By convention, the handler function should be called `actionXXX`, where XXX is the name of the action.
 
-As an example, let's say our plugin needs to implement the `SetTarget` action of the `urn:upnp-org:serviceId:SwitchPower1` service. The first thing we need to do is make sure that our plugin's device file declares the SwitchPower1 service, like this:
+As an example, let's say our plugin can, among other things, emulate a binary switch to control its operation and report its status--it can act like a virtual switch. It will thus need to declare that it supports the `urn:upnp-org:serviceId:SwitchPower1` service, and implement the `SetTarget` action of that service, as well as handle the related state variables `Target` and `Status`.
+
+The first thing we need to do is make sure that our plugin's device file declares our support of the "SwitchPower1" service, like this:
 
 ```
 <?xml version="1.0"?>
@@ -379,6 +381,7 @@ As an example, let's say our plugin needs to implement the `SetTarget` action of
 				<serviceId>urn:YOURDOMAIN-NAME:serviceId:PluginBasic1</serviceId>
 				<SCPDURL>S_PluginBasic1.xml</SCPDURL>
 			</service>
+			...other services if any...
 			<service>
 				<serviceType>urn:schemas-upnp-org:service:SwitchPower:1</serviceType>
 				<serviceId>urn:upnp-org:serviceId:SwitchPower1</serviceId>
@@ -403,7 +406,7 @@ Now at step 2, if we look at the declaraction of `SetTarget` in Vera's service f
     </action>
 ```
 
-So that tells us two important things about our implementation: (1) we must receive a single argument called `newTargetValue`, and (2) whatever else our implementation needs to do, we need to make sure write the value of `newTargetValue` to the `Target` state variable on the device. 
+So that tells us two important things about our implementation: (1) the action must receive and handle a single argument called `newTargetValue`, and (2) whatever else our implementation needs to do, we need to make sure write the value of `newTargetValue` to the `Target` state variable (declared related) on the device.
 
 With that in mind, on to step 3... declaring our action implementation in the plugin's implementation file. In the `actionList` section, add the following:
 
@@ -417,9 +420,9 @@ With that in mind, on to step 3... declaring our action implementation in the pl
 		</action>
 ```
 
-When you start out writing plugins, I recommend that every action implementation you place in the implementation be exactly and only as shown above. Remember that the `serviceId` needs to match that of the action named in `name`. The Lua code in the `run` section just calls the module's function to do the actual work, following my practice that as little as is necessary is done in the implementation file. The variable "_fpm" used above is a reference to your loaded Lua module--this is how you access your functions within it.
+When you start out writing plugins, I recommend that every action implementation you place in the implementation file (`I_.xml`) be exactly and only as shown above. Remember that the `serviceId` needs to match that of the action named in `name`. The Lua code in the `run` section just calls the module's function to do the actual work, following my practice that as little as is necessary is done in the implementation file. The framework global variable `_fpm` used above is a reference to your loaded Lua module--this is how you access your functions within it.
 
-Finally, for step 4, we just need to provide our implementation of the action in `L_PluginBasic1.lua`. Notice that the function name matches that in the `run` section of the implementation file, and that the function is **not** `local`, so that the implementation file can access it (it would be hidden if it was declared `local`).
+Finally, for step 4, we just need to provide the "real" implementation of the action in the Lua module (`L_.lua`). Notice that the function name matches that in the `run` section of the implementation file, and that the function is **not** `local`--this must be, so that the implementation file can access it (it would be hidden/inaccessible if it was declared `local`).
 
 ```
 function actionSetTarget( dev, arguments )
@@ -436,8 +439,45 @@ function actionSetTarget( dev, arguments )
 end
 ```
 
-Note that the implementation prototype above also takes care of setting the `Status` variable in the SwitchPower1 service. This variable stores the actual state of the device. The `Target` is the desired state, and `Status` is updated when the device actually makes it into that state. This is part of the "contract" of how SwitchPower1 is normally implemented on Vera. When you provide implementations for services, you will likely need to understand and uphold many of these details, which, unfortunately, are in large part not documented--you'll learn by doing.
+Note that our implementation prototype above also takes care of setting the `Status` variable of the SwitchPower1 service. This variable stores the actual state of the device. The `Target` is the desired state, and `Status` is updated when the device actually makes it into that target state. This is part of the "contract" of how SwitchPower1 is normally implemented on Vera. When you provide implementations for services, you will likely need to understand and uphold many of these "contract" details, which, unfortunately, are in large part not documented--you'll learn by doing. Sometimes, you will simply need to study the behavior of similar devices carefully to discover the "right" way your implementation should work. The Vera Community is an excellent resourcing for moving your knowledge ahead in these areas as well.
 
-At this point, you should have a pretty good idea of how this all hangs together. The device file tells Luup which services the device supports. Luup goes out and reads the service files for each of those services to understand what state variables and actions are represented. When an action is invoked, Luup makes sure the service and action are part of the device's declared support, and if so, goes to the implementation file's `actionList` to find the action implementation. If any part of this chain is broken, the LuaUPnP log file will contain errors saying that the action isn't supported by the device.
+At this point, you should have a pretty good idea of how this all hangs together. The device file (`D_.xml`) tells Luup which services the device supports. Luup goes out and reads the service files (`S_.xml`) for each of those services to understand the specific state variables and actions the services provide. When an action is invoked, Luup makes sure the service and action are part of the device's declared support, and if so, goes to the device's implementation file's `actionList` to find the action implementation and execute it. If any part of this chain is broken, the LuaUPnP log file will contain errors saying that the action isn't supported by the device.
 
 > NOTE: A common error that causes an action to be reported "not supported" when it appears everything is wired properly is a mispelling or change in capitalization of a name somewhere. Check every single reference, service Id, and name from the device file through the implementation and plugin module. It only takes a one-character difference to make the whole thing unravel.
+
+## Reference
+* `PFB.VERSION`
+  The current version of the Plugin Framework Basic
+* `PFB.device`
+  The device number of the plugin instance currently running
+
+* `PFB.log( level, message, ... )`
+  Log a message to the log stream. The `level` argument can be selected from `PFB.LOGLEVEL`. The message is not logged if the `level` is less critical than the current value of `PFB.loglevel`. The message argument may contain position parameters, identified by a "%" character followed by a number; the corresponding extra argument (from among the ...) is inserted at that position in the output message.
+* `PFB.LOGLEVEL`
+  A table of constants for the various log levels. Includes (upper- and lowercase): ERR, WARN, NOTICE, INFO, DEBUG1, DEBUG2. These are used to pass to `PFB.log()` or set `PFB.loglevel`. The DEFAULT key is the default logging level for the framework (currently == INFO).
+* `PFB.loglevel`
+  The current logging level. Messages less critical than this level will not be output to the log stream.
+  
+* `PFB.var.getVar( variableName [, device [, serviceId ] ] )`
+  Returns (two values) the current value and timestamp of the named state variable. May be called with 1-3 arguments; if `device` is omitted or `nil`, the plugin device is assumed. if `serviceId` is omitted or `nil`, the plugin's service is assumed.
+* `PFB.var.getVarNumeric( variableName, defaultValue [, device [, serviceId ] ] )`
+  Returns the numeric value of the named state variable. If the state variable is not defined, or its value blank or non-numeric, the value of `defaultValue` is returned. The `device` and `serviceId` parameters are optional and default as they do in `getVar()`.
+* `PFB.var.setVar( variableName, value [, device [, serviceId ] ] )`
+  Sets the value of the named state variable to the value given, and returns the prior value. The `device` and `serviceId` parameters are optional and default as they do in `getVar()`.
+* `PFB.var.initVar( variableName, defaultValue [, device [, serviceId ] ] )`
+  Like setVar, but does *not* set the state variable if it already exists. Used for one-time initialization, primarily.
+  
+* `PFB.timer.once( seconds, func, ... )`
+  Run a one-time timer for the specified number of seconds; upon its expiration, call the *function reference* (not a string) provided in `func` with any remaining arguments passed through. Returns a timer ID, which may be used to cancel the timer before its expiration by calling `PFB.timer.cancel()`.
+* `PFB.timer.interval( seconds, func, ... )`
+  Like `PFB.timer.once()` in every respect, except that the timer recurs on the interval provided automatically until cancelled.
+* `PFB.timer.cancel( timerID )`
+  Cancel the timer identified by `timerID`.
+  
+* `PFB.watch.set( device, serviceId, variableName, func, ... )`
+  Places a watch on the named state variable on the device. When it changes, the function (a *function reference*, not a string) will be called with the extra arguments passed through. If the `variableName` is `nil`, changes to any variable in the service on the device will trigger a call to the function/handler.
+* `PFB.watch.cancel( device, serviceId, variableName [, func ] )
+  Cancel a watch on a device state variable. If `func` is specified, only the watch that calls the function (passed by reference) is cancelled; otherwise, all watches for the device/state are cancelled.
+
+* `PFB.isOpenLuup()`
+  Returns `true` if running under openLuup, `false` otherwise.

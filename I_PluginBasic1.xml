@@ -239,11 +239,11 @@
         end
 
         -- Remove watch on device state variable
-        local function pluginDeviceWatchClear( dev, sid, var )
+        local function pluginDeviceWatchClear( dev, sid, var, func )
             local key = string.format( "%s/%s/%s", tostring(dev), tostring(sid), tostring(var))
             local del = {}
             for _,v in pairs( pluginWatches[key] or {} ) do
-                if v.dev == PFB.device then
+                if v.dev == PFB.device and ( func==nil or func==v.func ) then
                     table.insert( del, v.id )
                 end
             end
