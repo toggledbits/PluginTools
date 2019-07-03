@@ -446,8 +446,8 @@ At this point, you should have a pretty good idea of how this all hangs together
 > NOTE: A common error that causes an action to be reported "not supported" when it appears everything is wired properly is a mispelling or change in capitalization of a name somewhere. Check every single reference, service Id, and name from the device file through the implementation and plugin module. It only takes a one-character difference to make the whole thing unravel.
 
 ## Reference
-Function | Description
--------- | -----------
+Function    | Description
+----------- | -----------
 `PFB.VERSION` | The current version of the Plugin Framework Basic
 `PFB.device` | The device number of the plugin instance currently running
 `PFB.log( level, message, ... )` | Log a message to the log stream. The `level` argument can be selected from `PFB.LOGLEVEL`. The message is not logged if the `level` is less critical than the current value of `PFB.loglevel`. The message argument may contain position parameters, identified by a "%" character followed by a number; the corresponding extra argument (from among the ...) is inserted at that position in the output message.
