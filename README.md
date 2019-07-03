@@ -41,7 +41,7 @@ This is the first place where I think a lot of new Vera developers go wrong in w
 
 If you don't own a Internet domain name, no problem. I recommend you just use your Vera Community username with "-vera", such as "rigpapa-vera" (don't use *that* one, of course--it's mine!--this is just an example). For example, if I didn't own a domain name, I might have used this service ID for Reactor: `urn:rigpapa-vera:serviceId:Reactor1`. This also has the advantage of making it very easy for users to identify the developer, so you may want to use this approach even if you do own a domain name.
 
-## Lua
+### Lua
 
 Vera plugins are (currently) written in Lua, specifically Lua 5.1. A lot of people gripe about this, but I think this is one of best choices Vera made in implementation--it's a very well-defined, lightweight language with a lot of capability, and it's high-performing on even legacy Vera's modest processors. At the end of the day, it's just a tool. How you use the tool is more important than what the tool is, IMO.
 
@@ -49,9 +49,9 @@ To write plugins for Vera, you need to know Lua. If you don't know Lua, learning
 
 There are a lot of good, free resources for Lua and learning Lua online, easily found by search. It is also easy to download and install Lua on Windows, Mac, or your Linux desktop, so you can play with it locally.
 
-## Development Environment
+### Development Environment
 
-There is a good integrated development environment out there that connects to Vera and openLuup (search for ??? or query @akbooer on the Vera Community Forums). I personally just use a text editor (Notepad++) on my Windows desktop; I find IDEs too constraining.
+There is a good integrated development environment out there that connects to Vera and openLuup (search for ZeroBrane Studio or query @akbooer on the Vera Community Forums). I personally just use a text editor (Notepad++) on my Windows desktop; I find IDEs too constraining.
 
 I think it is *much* easier to develop plugins on openLuup than on Vera directly. It's a good enough emulation that only the outliers of Vera peculiarisms would be out of your reach (and then you can just do that part directly on Vera). Installed locally on your desktop or made reachable by NFS/Samba network share, you can edit your source files in place (you have to upload every change to Vera, unless you relish using `vi` or `nano` over an `ssh` terminal on the Vera directly), and reloads (which you'll do a lot) are instantaneous. It is also much more forgiving of some things that are big landmines on Vera and can leave you in a hard reload loop or worse.
 
@@ -73,11 +73,11 @@ The first step is to decide on a name for your plugin. It's a good idea to searc
 
 ### Step Two: Identify Your Namespace
 
-The namespace is the domain-name-looking part of service IDs, device types, etc. Typically, as stated above, the namespace is taken from the Internet domain name associated with the author or responsible party. For example, if I owned the domain "example.com", then I would use "example-com" as the namespace. This is the recommended approach.
+I know you read the "Service IDs" and "Defining Your Own Namespace" sections above *thoroughly* and already have identified your namespace. What? No?!? Please go back and do it!
 
-If you don't own an Internet domain name, you can make a namespace by using your Vera Community username with "-vera" appended, for example "johndoe-vera". The namespace doesn't need to actually exist as an object or entity somewhere on the internet, it's just a string that attempts to be unique enough that we don't have collisions between plugin developers. This approach, or an actual domain name you own, is sufficient for that purpose.
+Your namespace should be used by all plugins you create. If you've created another plugin with a namespace you own, use the same namespace for this new plugin. Otherwise, create a brand new namespace for yourself as recommended above using either a domain name that you own as a base, or the "veracommunityusername-vera" approach I talked about earlier.
 
-**What you must not do** is re-use "micasaverde-com" or "upnp-org", or the namespace belonging to another developer whose code you might be borrowing (famously, "futzle-com" has been widely abused by people who used @futzle's plugins as a starting point for their own). Using any namespace you don't control is a bad idea if only because it opens the risk of a collision in names with other people's work. Don't do it, please. Be a good developer-citizen.
+**What you must not do** is re-use "micasaverde-com", "upnp-org", "futzle-com" or any namespace belonging to another developer whose code you might be borrowing. Please be e a good developer-citizen.
 
 ### Step Three: Rename Files
 
