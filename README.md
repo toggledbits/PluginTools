@@ -55,7 +55,7 @@ The namespace is the domain part of service IDs, device types, etc. Typically, a
 
 If you don't own an Internet domain name, you can make a namespace by using your Vera Community username with "-vera" appended, for example "johndoe-vera". The namespace doesn't need to actually exist as an object or entity somewhere on the internet, it's just a string that attempts to be unique enough that we don't have collisions between plugin developers. This approach, or an actual domain name you own, is sufficient for that purpose.
 
-**What you must not do** is re-use "micasaverde-com" or "upnp-org", or the namespace belonging to another developer whose code you might be borrowing (famously, "futzle-com" has been widely abused by people who used @futzle's plugins as a starting point for their own. Using any namespace you don't control is a bad idea if only because it opens the risk of a collision in names with other people's work. Don't do it, please. Be a good developer-citizen.
+**What you must not do** is re-use "micasaverde-com" or "upnp-org", or the namespace belonging to another developer whose code you might be borrowing (famously, "futzle-com" has been widely abused by people who used @futzle's plugins as a starting point for their own). Using any namespace you don't control is a bad idea if only because it opens the risk of a collision in names with other people's work. Don't do it, please. Be a good developer-citizen.
 
 ### Step Three: Rename Files
 
@@ -69,13 +69,13 @@ Notice that the example preserves the prefix (`D_`, `I_`, etc.), as well as the 
 
 ### Step Four: Global Change #1 -- Namespace
 
-Now you're ready to make your first global change inside the files. It's simple. In all of the plugin files, change the string `YOURDOMAIN-NAME` (all caps as shown) to your selected namespace (from step 2 above). Make sure the namespace string is lowercase (so you are changing an uppercase string to a lowercase string).
+Now you're ready to make your first global change inside the files. It's simple. In all of the plugin files, change the string `YOURDOMAIN-NAME` (all caps as shown) to your selected namespace (from step 2 above). Make sure the new namespace string is all lowercase (so you are changing an all uppercase string to an all lowercase string).
 
 After you've done all the files, move on.
 
 ### Step Five: Global Change #2 -- Plugin Name
 
-Simple: global change the string "PluginBasic" to the compact name you used in step **three**. That is, change the search string to the same as that you used in all the filenames.
+Simple: *in each file*, global change the string "PluginBasic" to the compact name you used in step **three**. That is, change the search string to the same as that you used in all the filenames.
 
 ### Step Six: Other Code Changes and Checks
 
@@ -83,7 +83,7 @@ Make the following additional code changes in your L_ file (the Lua implementati
 * Change the definition of `_PLUGIN_NAME` to the friendly name of your plugin (spaces etc. OK here)
 * Make sure `_PLUGIN_COMPACT` has the same *compact name* that was used in steps three and five above.
 
-### Step Seven: Install
+### Step Seven: Install and Run!
 
 You can now install the template/skeleton and make it run. It won't do anything other than the canned/test/demo things that the framework ships with, but the fact that you can get the plugin started and doing those things demonstrates that you've made all of the changes correctly at least at the first level, and the system is able to run the code.
 
@@ -230,79 +230,35 @@ At this point, you should know that the service file `S_PluginBasic1.xml` define
 
 There are a couple of other files in the PluginBasic package: D_PluginBasic1.json and L_PluginBasic1.lua. We'll cover these soon enough.
 
-## The PluginBasic "Framework"
+## Creating Your Plugin
 
-PluginBasic attempts to isolate a few of the detailed vagaries of plugin authoring from you, in addition to providing some basic functions for you to work with. The idea is that with as few changes as possible, you can get a plugin skeleton up and running quickly. Then, you can embellish and layer your functionality into its structure to make your plugin do the specific tasks it needs to perform.
-
-If you start by looking at the `startPluginBasicImpl` function defined in the implementation file, you'll see that the first thing it does (after logging a startup message) is load the `L_PluginBasic1.lua` file as a module. It then calls a function called `pluginStart` in that module, which in turns calls a function you will write to get your plugin going.
-
-Many plugins will have their entire implementation within the `functions` tag of the implementation file. I avoid this, and try to minimize the amount of code in the implementation file for several reasons:
-1. The implementation file is XML, so you can't use certain characters in your code without escaping them, notably the \< character. This makes the code harder to read, and if you're copy/pasting from another environment, may leave you with a lot of manual labor every time fixing up those special characters going one direction or the other;
-2. Syntax-highlighting editors see an XML, not Lua code, so they don't highlight the code properly or at all;
-3. Error messages that Luup may log from errors in the code will have line numbers that have nothing to do with the line numbers in the implementation file, and other corruptions of the error messages, making finding those errors that much harder.
-
-My general rule/advice is to not put *any* code in the implementation file that doesn't need to be there. Instead, to the greatest degree possible, I put plugin code into an L_.lua file that's defined as a module for the implementation to use, and all the work gets done there. The implementation file just hands off to the Lua file as quickly as possible.
-
-So if you look at the prior code snippet, it expressed that philosophy in code: the implementation file's named startup function `startupPluginBasicImpl` loads the Lua file as a module and calls its `pluginStart` function to hand off the rest of the work. Nothing else is done after in the implementation file.
-
-Let's pause here a moment and look at the framework Lua file `L_PluginTest.lua`. The file contains a number of function declarations at the top for logging and general utility use. You can find the specifics of these in the "Function Reference" section below. These functions should not be modified. Likewise, there's a section near the bottom of the file  that begins with our `pluginStart` function, and that function and everything below it also should not be modified.
-
-The section in the middle is where (a) there are functions you can/must modify for the implementation of your plugin, and (b) you can add your own functions as needed as part of the implementation. But before we dive in...
-
-## Making It Your Own
-
-Before you can use the framework to create your own plugin, you need to decide two things:
-1. The name of your plugin;
-2. The domain you will use for your uniform resource identifies (see the earlier section on service Ids if that concept is unfamiliar).
-
-To start, in each of the included files:
-1. Global change all instances of the string "YOURDOMAIN-NAME" to your personal domain name (see above).
-1. Global change all instances of the string "PluginBasic" to your new plugin name.
-1. Rename all of the files so the "PluginBasic" part of the filename is now your new plugin name.
-
-Make sure you make these changes to all of the files. If you miss even one instance somewhere, something will not work properly, and it's even possible your Vera could malfunction and require the intervention of Vera Support.
-
-You now have the source code of the skeleton of your new plugin. Let's install it and get it running, and then you can start fleshing it out.
-
-## Installing the Skeleton App
-
-**NOTE: For the remainder of this document, I will continue to refer to the files, services, etc. using the name `PluginBasic`, but as of the completion of the steps above, you will need to use the new name(s) assigned as a result of those changes.**
-
-To install the app:
-1. Open the upload tool on your Vera by going to *Apps > Develop apps > Luup files*
-2. Select all of the plugin files as a group and drag them to the upload tool. Alternately, you can upload the files individually by dragging or picking, but be sure to turn off "Restart Luup after upload" until the last file; for the last file, turn that checkbox back on and then upload the last file.
-
-Once you have all the files up, you'll need to create the first device manually:
-1. Go to *Apps > Develop apps > Create device*
-2. Enter a "Description" for your new plugin device (same as the plugin name is always a good start)
-3. Enter the name of the UPnP device file (e.g. D_PluginTest1.xml) in its field;
-4. Enter the name of the UPnP implementation file (e.g. I_PluginTest1.xml) in its field;
-5. Double- and triple-check that you have the filenames correct. Remember, these should be the names of files you uploaded, the new names you assigned in the "Making It Your Own" section.
-6. Hit the "Create device" button.
-7. Go to *Apps > Develop apps > Test Luup code (Lua)* and enter and run `luup.reload()`
-1. Wait a moment, then [hard refresh your browser](https://www.getfilecloud.com/blog/2015/03/tech-tip-how-to-do-hard-refresh-in-browsers/)
-
-Once Luup has reloaded and you've refreshed, you should now see your new plugin device on the Devices list (it will have a keypad icon by default).
-
-## Necessary Changes
-
-There are a couple of functions, the declarations of which are already in `L_PluginBasic1.lua` that you may or will need to modify for your plugin:
+In order to make the plugin do the work you want it to do, you will need to modify a few core functions in the Lua implementation module (`L_xxx1.lua`):
 
 ### start( dev )
 
-You will always need to modify this function. This function should contain your initialization and startup code for your plugin. It will be called by the framework's `pluginStart` function after framework initialization. All of your startup should go in here. Do not modify the startup code in `I_PluginBasic1.xml` or the `pluginStart` function in `L_PluginBasic1.lua`.
+You will always need to modify this function. It is called to initialize and start your plugin, so you need to modify it to contain whatever needs to be done to get the work started. All of your startup code should go in here. **Do not modify the startup code in `I_PluginBasic1.xml`.**
 
 The function should return three values: a boolean (`true` or `false`) success code, and a message (or `nil`). If the first value returned is anything other than `false`, the framework assumes that your plugin code has started successfully and will clear the device error state and return a success indication to Luup. If the value is `false`, or if an error is thrown by your code, the device will enter error state and the message provided returned to Luup to be displayed as a device error.
 
-Your start code must initialize all plugin-specific data. You can declare any module-global data you need at the top of the `L_PluginBasic1.lua` file in the area indicated for this purpose. Do not modify the framework's global declarations above that area. You may also load (using `require`) any other packages your code needs.
+Your startup code must initialize all plugin-specific data. You can declare any module-global data you need at the top of the Lua file in the area indicated for this purpose. You may also load (using `require`) any other packages your code needs.
 
 ### runOnce( dev )
 
-The `runOnce()` function is called the first time your plugin code runs in a new device. Use this for any one-time initializations you may need to perform. It will not be called again, unless the `Configured` state variable is set to anything other than "1" (digit one).
+The `runOnce()` function is called the first time your plugin code runs in a new device. Use this for any one-time initializations you may need to perform. It will not be called again, unless the `Configured` state variable is set to anything other than "1" (digit one). The framework manages this state variable and decides whether or not `runOnce()` needs to be called, so do not call it directly from your own startup code, and do not manipulate `Configured` in any way.
 
 ### checkVersion( dev )
 
 The `checkVersion()` function is expected to return a boolean (true/false) indicating that the current running Vera/Luup firmware is compatible with the plugin. If `false` is returned, the startup of the plugin will be aborted. If anything other than `false` is return, the plugin will be started.
+
+## Getting To Work
+
+Once your startup code returns and startup completes, your plugin is sitting waiting for something to happen. You need to add code to react to things that your plugin needs to act on. These may include:
+1. Time-based events, for example, handling the expiration of an interval timer;
+2. Device-based events, for example, handling a change in the state of a device you are monitoring;
+3. Handle an HTTP request made to the Vera with the plugin identified as the target to answer the request;
+3. Actions, for example, a request from the user/UI to perform some task the plugin is capable of performing.
+
+If you don't do any of the above, your plugin basically runs at startup and does nothing else, so it's very rare that a plugin won't need to have code to handle at least one of the above conditions.
 
 ## Additional Framework Functions
 
@@ -338,7 +294,7 @@ A timer can be cancelled by passing its timer ID to `PFB.timer.cancel( timerID )
 
 The user of these functions over the `luup.call_delay()/call_timer()` functions is highly recommended.
 
-### Variable/Service Watches
+### Device State Variable/Service Watches
 
 Your plugin can watch a state variable on a device, or all state variables in a service on a device, by calling `PFB.watch.set( dev, serviceId, variableName, func, ... )`. 
 When the variable named on the specified device is changed, the framework will call the specified handler function (passed as a *function reference*, not a string containing the name). If there are arguments after the function reference, these "extra arguments" will be passed to the handler function later. If the `variableName` argument is omitted or `nil`, the watch handler will be called when *any* state variable in the named service on the device is modified.
