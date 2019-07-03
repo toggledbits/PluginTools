@@ -450,9 +450,9 @@ Function | Description
 -------- | -----------
 `PFB.VERSION` | The current version of the Plugin Framework Basic
 `PFB.device` | The device number of the plugin instance currently running
+-------- | -----------
+`PFB.log( level, message, ... )` | Log a message to the log stream. The `level` argument can be selected from `PFB.LOGLEVEL`. The message is not logged if the `level` is less critical than the current value of `PFB.loglevel`. The message argument may contain position parameters, identified by a "%" character followed by a number; the corresponding extra argument (from among the ...) is inserted at that position in the output message.
 
-* `PFB.log( level, message, ... )`
-  Log a message to the log stream. The `level` argument can be selected from `PFB.LOGLEVEL`. The message is not logged if the `level` is less critical than the current value of `PFB.loglevel`. The message argument may contain position parameters, identified by a "%" character followed by a number; the corresponding extra argument (from among the ...) is inserted at that position in the output message.
 * `PFB.LOGLEVEL`
   A table of constants for the various log levels. Includes (upper- and lowercase): ERR, WARN, NOTICE, INFO, DEBUG1, DEBUG2. These are used to pass to `PFB.log()` or set `PFB.loglevel`. The DEFAULT key is the default logging level for the framework (currently == INFO).
 * `PFB.loglevel`
