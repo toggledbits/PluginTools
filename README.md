@@ -450,7 +450,7 @@ Function | Description
 -------- | -----------
 `PFB.VERSION` | The current version of the Plugin Framework Basic
 `PFB.device` | The device number of the plugin instance currently running
--------- | -----------
+-- | --
 `PFB.log( level, message, ... )` | Log a message to the log stream. The `level` argument can be selected from `PFB.LOGLEVEL`. The message is not logged if the `level` is less critical than the current value of `PFB.loglevel`. The message argument may contain position parameters, identified by a "%" character followed by a number; the corresponding extra argument (from among the ...) is inserted at that position in the output message.
 
 * `PFB.LOGLEVEL`
