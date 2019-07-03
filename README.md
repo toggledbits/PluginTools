@@ -1,41 +1,63 @@
-# PluginBasic - Template for Simple Vera/Luup Plugins
+# Plugin Framework Basic - Template for Simple Vera/Luup Plugins
+
+This document corresponds to framework version 19184.
 
 ## Before You Begin
 There are a few things you need to know before you dive in. **Please make sure you take the time to read and understand this section.** It's important. You'll bypass a lot of weird bugs and troublesome roadblocks if have the basic concepts I'm about to explain firmly under your belt.
 
 ### Services
 
-The first thing you really need to understand is that all devices in Luup center around *services*. A service is a container for a capability or set of capabilities that are logically associated that the device has. For example, on-off (binary) switches implement the `urn:upnp-org:serviceId:SwitchPower1` service, which contains the `Target` and `Status` variables that hold the desired and current, respectively, state of the switch, and the `SetTarget` action, which is used to turn the switch on and off (and set the `Target` and `Status` variables accordingly). If we have a dimmer, it may also support the `urn:upnp-org:serviceId:Dimming1` service, which contains the state variables associated with brightness level (e.g. `LoadLevelTarget` and `LoadLevelStatus`) as well as the actions to control brightness (`SetLoadLevelTarget`) and other dimmer-like behaviors.  Elaborating on this further, our example device may also support the `urn:micasaverde-com:serviceId:EnergyMetering1` service, meaning it nows how to track and report its energy use (with the appurtenent state variables and actions). Services layer and are cumulative--every service named by a device means the device supports the added capabilities of that service.
+The first thing you really need to understand is that all devices in Luup center around *services*. A service is a container for logically-related set set of capabilities that the device has. For example, on-off (binary) switches implement the `urn:upnp-org:serviceId:SwitchPower1` service, which contains the `Target` and `Status` variables that hold the desired and current, respectively, state of the switch, and the `SetTarget` action, which is used to turn the switch on and off (and set the `Target` and `Status` variables accordingly). If we have a dimmer, it may also support the `urn:upnp-org:serviceId:Dimming1` service, which contains the state variables associated with brightness level (e.g. `LoadLevelTarget` and `LoadLevelStatus`) as well as the actions to control brightness (`SetLoadLevelTarget`) and other dimmer-like behaviors.  Elaborating on this further, our example device may also support the `urn:micasaverde-com:serviceId:EnergyMetering1` service, meaning it nows how to track and report its energy use (with the appurtenent state variables and actions). Services layer and are cumulative--every service named by a device means the device supports the added capabilities of that service. So a typical dimmer supports these three services at least. If it's capable of RGB control, then there's another service added for that, and so on.
 
-Those funky `urn:upnp-org:blah blah blah` names are important, and you have to get them right. These names are actually called *service IDs*. Each service defines its own service ID. The devices name which services they support by enumerating a list of service IDs.
-
-If you think about how a device can support multiple services, you may realize that it's possible for a service to define a state variable, for example, `Status`, that is such a common name that it's like to be used by another service as well. And that is true--this is exactly what happens. So, how does one keep them sorted out? The answer is that service ID--every state variable stored on a device is *not identified only by its name*, but rather by *the combination of service ID and state variable name*. This allows a device to have two different state variables named `Status`. The device further identifies them by knowing that one is associated with one service, and the other with another service. And in fact, if we want to refer to one of them, we have to use *both the service ID and variable name* to do so.
-
-So another way to think of a service is to think of its as a namespace, since everything contained in the service (namespace) is isolated from other services (which have their own separate namespaces).
+Those funky `urn:upnp-org:blah blah blah` names are important, and you have to get them right. These names are actually called *service IDs*. Each service is uniquely identified by its own service ID. Devices specify which services they support by enumerating those service IDs.
 
 ### Service IDs
 
-You can see there's a rhythm to the structure of a service ID, and that's derived from UPnP. The specifics of that aren't really important to Vera Luup, and in fact, your service IDs can be anything, as long as they are unique, but we try to stick with convention and color inside the lines. So let's look at the structure of a service ID.
+Service IDs identify a single service that contain the service's resources. They are, in essence, a *namespace* for resources associated with a service. Egad. What does all that mean?
+
+A namespace is simply an identifier (string) that is paired with another resource identifier (like a name or number) that helps more uniquely identify the resource and separate it from others with the same name. For example, let's say you want to fly somewhere, and so you book Lufthansa flight 100 out of your local airport to where you're going. As it happens, Delta and United also have flights numbered 100 out of the same airport. On the day of your flight, you show up at the airport, late as usual, and hurriedly ask the Information Desk where flight 100 is boarding. What's the first question you will be asked in response? "What airline?" of course. Basically, "flight 100" is the resource name, but Delta, United, and Lufthansa are the namespaces that identify and separate all the "flight 100"'s so you can board the correct one. A resource is "owned" in a namespace, so to correctly identify the right resource, you need to refer to it *both* by its namespace (Lufthansa) and its specific resource name (flight 100). The goal of namespaces is to create something unique enough that when coupled with the other identifying element(s) (a name, for example), one single resource is uniquely identified from all of the possible same-named/numbered resources that may exist in the environment.
+
+To show the importance of namespaces in Luup, say you had a heating/cooling thermostat and you need to query it for its current setpoint. It has two setpoints--one for heating and one for cooling--so querying for "CurrentSetpoint" alone is ambiguous--you need to tell it which you want! Likewise, a lot of different services have a variable called "Status" that they use for some purpose. It's a very descriptive but also very generic name. Imagine the confusion (and complete disaster) that could happen if all those services tried to control the same variable!
+
+So variables, actions, and other resources in Vera are usually not just identified by name, but by the combination of a name and another string, such as a service ID.
+
+Taking a closer look at service IDs (and other namespaces in Vera), you can see there's a rhythm to their structure. They follow the UPnP standard (loosely). Let's look at a common one:
 
 ```
 urn:upnp-org:serviceId:SwitchPower1
 ```
 
-You can see that the service ID has four *elements*, each of which is separated by a colon (":"). The "urn" first element is a fixed string (never changes) that means *uniform resource name*, and it says that this string is a name for a well-known resource of some type. The second part, "upnp-org" is the *domain* that defines or contains the resource. It is actually a domain name with the dots changed to dashes, and it generally identifies the organization or entity that created and maintains the resource definition. Since binary switches are a standard UPnP thing, the "upnp-org" domain indicates that the service named here is a UPnP standard service (and maintained by upnp.org). The third element is the fixed string "serviceId" and says that this name (this URN) is the name of a UPnP service. Finally, the last element, "SwitchPower1" is the name of the service.
+You can see that the service ID has four *elements*, each of which is separated by a colon (":"). The "urn" first element is a fixed string (never changes) that means [*uniform resource name*](https://en.wikipedia.org/wiki/Uniform_Resource_Name), saying this string is a name for a well-known resource of some type. The second part, "upnp-org", is the namespace part of the service ID. It is usually derived from an Internet domain name, with the dots changed to dashes, but can be anything as long as it uniquely identifies the organization or entity that created and maintains the resource definition. Since binary switches have a standard UPnP definition, UPnP.org owns the definition and so the "upnp-org" namespace is used here. The third element is the fixed string "serviceId" and says that this URN is the name of a UPnP service (not a device type or other identifier). Finally, the last element, "SwitchPower1" is the name of the service itself. 
 
-While the specific parts of the service ID have meaning, they aren't significant in Luup. The only thing that matters is that it's unique. You can have a service ID simply called "frodo" without any colons or the four elements, and that would work, it would just violate the "social convention" that we developers try to stick with.
+> Really, elements one and three aren't necessary; it would be just as unique to use the shortcut `upnp-org:SwitchPower1`, since the "urn" and "serviceId" strings are repeated in all service IDs, so don't contribute to their uniqueness. But we don't do this because Vera would not see them as literally equal, and Vera uses the longer form. But for services that Vera doesn't define, we could in fact choose anything we want, because the specifics of the string's structure aren't significant to Vera/Luup, the string just needs to be unique.  You can have a service ID simply called "frodo" without any colons or the four elements, and that would work, it would just violate the "social convention" that we developers try to stick with by using the UPnP form.
 
-And it turns out, that convention can be important. The four-element structure has that all important second part, the namespace domain. Without that, you and another develop could get into a big argument over whose plugin gets to define the "frodo" service. There's no argument, and no conflict, however, if you each define your service ID within the rules, because each of you will incorporate into your service ID a domain name, presumably one that own.
+### Defining Your Own Namespace
 
-This is the first place where I think a lot of people go wrong in writing their own plugins: they borrow code from another plugin, and while they may change the service name in the service IDs to match their new plugin name, they don't change the domain name to something they own. This is how you end up with plugins and devices defining services in the `micasaverde-com`, which belongs to Micasaverde/eZLO/Vera. This is potentially dangerous, and must be avoided, as an ongoing practice of doing this increasingly leads to the chances that two plugins will try to use the same service ID. **YOU MUST USE YOUR OWN DOMAIN NAME TO CREATE YOUR OWN NAMESPACE FOR YOUR SERVICE IDS.** No exceptions. So, to create your own namespace, use your own domain name, and never a domain name that you don't own (and that includes upnp.org, micasaverde.com, futzle.com, etc.).
+As a Vera developer, you will be in the position of creating new services. As such, you need a namespace, a string that identifies you alone (or at least has a low risk of being used by others in the Vera world) that can be a part of your service IDs, device types, etc., to uniquely identify those resources you define and maintain. Fear not! It's easy.
 
-If you don't own a Internet domain name, no problem. I recommend you just use your Vera Community username with "-vera", such as "rigpapa-vera" (don't use that one--it's mine--this is just an example). So if I didn't own a domain name, I might have used this service for Reactor: `urn:rigpapa-vera:serviceId:Reactor1`.
+The best way to create your own namespace is to follow the convention Vera uses and use an Internet domain name that you own. So, if you happen to own "example.com", your UPnP namespace would be "example-com", and all of your service IDs and device types would use that as their second element (e.g. `urn:example-com:serviceId:SomeService1`).
+
+This is the first place where I think a lot of new Vera developers go wrong in writing their own plugins: they use someone else's plugin as a template to get started, and while they must change the service name in the service IDs to match their new plugin name, they don't change the namespace to something they own, so they are effectively highjacking someone else's namespace/domain. This is how you end up with third-party plugins and devices defining new services in the `micasaverde-com` namespace, which belongs to eZLO/Vera. It also seems a lot of early Vera developers copied code from @futzle as a starting point for their new plugins, and as a result many old plugins in the app marketplace use the "futzle-com" namespace--and because of this, *she has often been asked for support for plugins that she didn't write!* For this reason and others, **YOU MUST USE YOUR OWN DOMAIN NAME TO CREATE YOUR OWN NAMESPACE.** No exceptions. Never use a namespace/domain that you don't own (and that includes upnp-org, micasaverde-com, futzle-com, etc.) for your new work.
+
+If you don't own a Internet domain name, no problem. I recommend you just use your Vera Community username with "-vera", such as "rigpapa-vera" (don't use *that* one, of course--it's mine!--this is just an example). For example, if I didn't own a domain name, I might have used this service ID for Reactor: `urn:rigpapa-vera:serviceId:Reactor1`. This also has the advantage of making it very easy for users to identify the developer, so you may want to use this approach even if you do own a domain name.
 
 ## Lua
 
-Vera plugins are (currently) written in Lua, specifically Lua 5.1. A lot of people gripe about this, but I think this is one of best choices Vera made in implementation--it's a very well-defined, lightweight language with a lot of capability, and it's high-performing on even legacy Vera's modest processors.
+Vera plugins are (currently) written in Lua, specifically Lua 5.1. A lot of people gripe about this, but I think this is one of best choices Vera made in implementation--it's a very well-defined, lightweight language with a lot of capability, and it's high-performing on even legacy Vera's modest processors. At the end of the day, it's just a tool. How you use the tool is more important than what the tool is, IMO.
 
-To write plugins for Vera, you need to know Lua. If you don't know Lua, it would help if you're fluent in C/C++, Python, or JavaScript. These languages are close enough, and your fluency with them likely has given you a base not just in writing code, but in thinking logically and algorithmically. If that's not you, though, I'll be honest: don't try to write a plugin for Vera. The learning curve is steep, and long. The language, really, is the least of it. If you don't have a good base and are comfortable writing code to solve problems, the relatively dismissive "just write a plugin" will burn you to the ground.
+To write plugins for Vera, you need to know Lua. If you don't know Lua, learning it will be eased if you're fluent in C/C++, Python, or JavaScript. These languages are close enough, and your fluency with them likely has given you a base not just in writing code, but in thinking logically and algorithmically. The Vera development learning curve is steep and long, though, because the syntax of the language is really the easiest part. Much harder is learning the Luup library functions, and all of the particulars and nuances of how Luup operates and plugins execute in the Luup environment. Having a methodical approach to solving problems (as opposed to shot-gunning and just trying things until something appears to work) is also a big help. If that's not you, though, I'll be honest: don't try to write a plugin for Vera. You're gonna have a bad time.
+
+There are a lot of good, free resources for Lua and learning Lua online, easily found by search. It is also easy to download and install Lua on Windows, Mac, or your Linux desktop, so you can play with it locally.
+
+## Development Environment
+
+There is a good integrated development environment out there that connects to Vera and openLuup (search for ??? or query @akbooer on the Vera Community Forums). I personally just use a text editor (Notepad++) on my Windows desktop; I find IDEs too constraining.
+
+I think it is *much* easier to develop plugins on openLuup than on Vera directly. It's a good enough emulation that only the outliers of Vera peculiarisms would be out of your reach (and then you can just do that part directly on Vera). Installed locally on your desktop or made reachable by NFS/Samba network share, you can edit your source files in place (you have to upload every change to Vera, unless you relish using `vi` or `nano` over an `ssh` terminal on the Vera directly), and reloads (which you'll do a lot) are instantaneous. It is also much more forgiving of some things that are big landmines on Vera and can leave you in a hard reload loop or worse.
+
+In particular, if you only have one Vera, and you use it to control your house or you do not have continuous local access to it, I strongly recommend you use openLuup for all development.
+
+My development environment is openLuup running on an Ubuntu VM, a Windows desktop with Notepad++ for editing, and an Ubuntu laptop with openLuup for work on the road. I do not use an IDE. I also have a Vera3 and VeraPlus separate from my "production" (spouse-facing) unit so I can test/reboot/crash/factory reset at will. Still, backups are necessary and will save time.
 
 OK. Ready to begin? Let's get to the meat of it...
 
@@ -51,7 +73,7 @@ The first step is to decide on a name for your plugin. It's a good idea to searc
 
 ### Step Two: Identify Your Namespace
 
-The namespace is the domain part of service IDs, device types, etc. Typically, as stated above, the namespace is taken from the Internet domain name associated with the author or responsible party. For example, if I owned the domain "example.com", then I would use "example-com" as the namespace. This is the recommended approach.
+The namespace is the domain-name-looking part of service IDs, device types, etc. Typically, as stated above, the namespace is taken from the Internet domain name associated with the author or responsible party. For example, if I owned the domain "example.com", then I would use "example-com" as the namespace. This is the recommended approach.
 
 If you don't own an Internet domain name, you can make a namespace by using your Vera Community username with "-vera" appended, for example "johndoe-vera". The namespace doesn't need to actually exist as an object or entity somewhere on the internet, it's just a string that attempts to be unique enough that we don't have collisions between plugin developers. This approach, or an actual domain name you own, is sufficient for that purpose.
 
@@ -65,7 +87,7 @@ Your chosen plugin name may have spaces or other characters that are not basic-f
 
 Once you have a compact form of your plugin name, rename all the plugin files, giving the compact form as a replacement for "PluginBasic" in the names. For example: `D_PluginBasic1.xml` becomes `D_HuaweiRouter1.xml`. The other files would become `D_HuaweiRouter1.json`, `I_HuaweiRouter1.xml`, `L_HuaWeiRouter1.lua`, and `S_HuaweiRouter1.xml`.
 
-Notice that the example preserves the prefix (`D_`, `I_`, etc.), as well as the "1" that precedes the suffix, and the suffix itself. Very important that you keep that straight.
+Notice that the example preserves the prefix (`D_`, `I_`, etc.), the "1" that precedes the suffix, and the suffix itself. It's very important that you keep that straight.
 
 ### Step Four: Global Change #1 -- Namespace
 
@@ -124,7 +146,7 @@ and then as the default implementation updates the time every five seconds, you'
 50	07/03/19 14:32:46.104	luup_log:101: [notice] Plugin Framework Basic: variableChanged() called! extra arguments: "a1", "b2" <0x74536520>
 ```
 
-Take a look at the code in the Lua implementation module (`L_xxx1.xml`) and see if you can correlate the messages to their various sources.
+Take a look at the code in the Lua implementation module (`L_.xml`) and see if you can correlate the messages to their various sources.
 
 ## Plugin Structure
 
@@ -232,7 +254,7 @@ There are a couple of other files in the PluginBasic package: D_PluginBasic1.jso
 
 ## Creating Your Plugin
 
-In order to make the plugin do the work you want it to do, you will need to modify a few core functions in the Lua implementation module (`L_xxx1.lua`):
+In order to make the plugin do the work you want it to do, you will need to modify a few core functions in the Lua implementation module (`L_.lua`):
 
 ### start( dev )
 
@@ -361,8 +383,8 @@ Your plugin must provide an implementation for all service actions it is capable
 To implement an action:
 1. Make sure the service to which the action belongs is declared in the plugin's device file (D_.xml).
 1. Find the service file in which the action is declared, to make sure you have the complete definition of the action. For Vera-defined service, you will find the service files in `/etc/cmh-lu` on your Vera.
-1. Declare the implementation in the implementation file's `actionList` section. Add an `action` tag, and inside it, add a `serviceId` tag containing the full service ID of the action, a `name` tag containing the name of the action, and a `run` and/or `job` tag containing an implementation stub that hands control to a handler function you create in `L_PluginBasic1.lua`.
-1. In `L_PluginBasic1.lua`, create a handler function for the action and provide the action implementation within in. By convention, the handler function should be called `actionXXX`, where XXX is the name of the action.
+1. Declare the implementation in the implementation file's `actionList` section. Add an `action` tag, and inside it, add a `serviceId` tag containing the full service ID of the action, a `name` tag containing the name of the action, and a `run` and/or `job` tag containing an implementation stub that hands control to a handler function you create in the Lua implementation file (`L_.lua`).
+1. In the Lua implementation file (`L_.lua`), create a handler function for the action and provide the action implementation within in. By convention, the handler function should be called `actionXXX`, where XXX is the name of the action.
 
 As an example, let's say our plugin can, among other things, emulate a binary switch to control its operation and report its status--it can act like a virtual switch. It will thus need to declare that it supports the `urn:upnp-org:serviceId:SwitchPower1` service, and implement the `SetTarget` action of that service, as well as handle the related state variables `Target` and `Status`.
 
