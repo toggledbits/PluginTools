@@ -451,7 +451,7 @@ At this point, you should have a pretty good idea of how this all hangs together
 * `PFB.device`  
   The device number of the plugin instance currently running
 
-* `PFB.log( level, message, ... )`  
+* `PFB.log( level, message [, ... ] )`  
   Log a message to the log stream. The `level` argument can be selected from `PFB.LOGLEVEL`. The message is not logged if the `level` is less critical than the current value of `PFB.loglevel`. The message argument may contain position parameters, identified by a "%" character followed by a number; the corresponding extra argument (from among the ...) is inserted at that position in the output message.
 * `PFB.LOGLEVEL`  
   A table of constants for the various log levels. Includes (upper- and lowercase): ERR, WARN, NOTICE, INFO, DEBUG1, DEBUG2. These are used to pass to `PFB.log()` or set `PFB.loglevel`. The DEFAULT key is the default logging level for the framework (currently == INFO).
@@ -467,14 +467,14 @@ At this point, you should have a pretty good idea of how this all hangs together
 * `PFB.var.initVar( variableName, defaultValue [, device [, serviceId ] ] )`
   Like setVar, but does *not* set the state variable if it already exists. Used for one-time initialization, primarily.
   
-* `PFB.timer.once( seconds, func, ... )`  
+* `PFB.timer.once( seconds, func [, ... ] )`  
   Run a one-time timer for the specified number of seconds; upon its expiration, call the *function reference* (not a string) provided in `func` with any remaining arguments passed through. Returns a timer ID, which may be used to cancel the timer before its expiration by calling `PFB.timer.cancel()`.
-* `PFB.timer.interval( seconds, func, ... )`  
+* `PFB.timer.interval( seconds, func [, ... ] )`  
   Like `PFB.timer.once()` in every respect, except that the timer recurs on the interval provided automatically until cancelled.
 * `PFB.timer.cancel( timerID )`  
   Cancel the timer identified by `timerID`.
   
-* `PFB.watch.set( device, serviceId, variableName, func, ... )`  
+* `PFB.watch.set( device, serviceId, variableName, func [ , ... ] )`  
   Places a watch on the named state variable on the device. When it changes, the function (a *function reference*, not a string) will be called with the extra arguments passed through. If the `variableName` is `nil`, changes to any variable in the service on the device will trigger a call to the function/handler.
 * `PFB.watch.cancel( device, serviceId, variableName [, func ] )  
   Cancel a watch on a device state variable. If `func` is specified, only the watch that calls the function (passed by reference) is cancelled; otherwise, all watches for the device/state are cancelled.
