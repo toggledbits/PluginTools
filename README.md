@@ -114,7 +114,7 @@ To install (Vera):
 1. Create the first plugin device. Go to *Apps > Develop apps > Create device* and fill in the fields below; leave the rest blank. Then hit the "Create" button.
   * Description: The name of your plugin
   * UPnP Device Filename: `D_xxxx1.xml` (use the filename you assigned when renaming the files)
-  * UPnP Implementation Filename: `I_xxxx1.xml1` (use the filename you assigned when renaming the files)
+  * UPnP Implementation Filename: `I_xxxx1.xml` (use the filename you assigned when renaming the files)
 1. Go to *Apps > Develop apps > Test Luup code (Lua)* and enter and run: `luup.reload()`
 1. Hard refresh your browser [How?](https://www.getfilecloud.com/blog/2015/03/tech-tip-how-to-do-hard-refresh-in-browsers/)
 
