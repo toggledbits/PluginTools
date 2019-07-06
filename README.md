@@ -2,6 +2,47 @@
 
 This document corresponds to framework version 19184.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Plugin Framework Basic - Template for Simple Vera/Luup Plugins](#plugin-framework-basic---template-for-simple-veraluup-plugins)
+  - [Before You Begin](#before-you-begin)
+    - [Services](#services)
+    - [Service IDs](#service-ids)
+    - [Defining Your Own Namespace](#defining-your-own-namespace)
+    - [Lua](#lua)
+    - [Development Environment](#development-environment)
+  - [First Steps](#first-steps)
+    - [Step One: Decide on a Name](#step-one-decide-on-a-name)
+    - [Step Two: Identify Your Namespace](#step-two-identify-your-namespace)
+    - [Step Three: Rename Files](#step-three-rename-files)
+    - [Step Four: Global Change #1 -- Namespace](#step-four-global-change-1----namespace)
+    - [Step Five: Global Change #2 -- Plugin Name](#step-five-global-change-2----plugin-name)
+    - [Step Six: Other Code Changes and Checks](#step-six-other-code-changes-and-checks)
+    - [Step Seven: Install and Run!](#step-seven-install-and-run)
+    - [Step Eight: Check the LuaUPnP log](#step-eight-check-the-luaupnp-log)
+  - [Plugin Structure](#plugin-structure)
+    - [How Actions Work](#how-actions-work)
+    - [Other Plugin Files](#other-plugin-files)
+  - [Creating Your Plugin](#creating-your-plugin)
+    - [`start( dev )`](#start-dev-)
+    - [`runOnce( dev )`](#runonce-dev-)
+    - [`checkVersion( dev )`](#checkversion-dev-)
+  - [Getting To Work](#getting-to-work)
+  - [Additional Framework Functions](#additional-framework-functions)
+    - [Time Delays and Intervals](#time-delays-and-intervals)
+    - [Device State Variable/Service Watches](#device-state-variableservice-watches)
+    - [Request Handler](#request-handler)
+    - [Logging](#logging)
+    - [State Variable Handling](#state-variable-handling)
+  - [Using State Variables in Your Plugin](#using-state-variables-in-your-plugin)
+  - [Defining New Service Actions](#defining-new-service-actions)
+  - [Implementing Service Actions](#implementing-service-actions)
+  - [Reference](#reference)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ## Before You Begin
 There are a few things you need to know before you dive in. **Please make sure you take the time to read and understand this section.** It's important. You'll bypass a lot of weird bugs and troublesome roadblocks if have the basic concepts I'm about to explain firmly under your belt.
 
@@ -115,7 +156,7 @@ To install (Vera):
    * Description: The name of your plugin
    * UPnP Device Filename: `D_xxxx1.xml` (use the filename you assigned when renaming the files)
    * UPnP Implementation Filename: `I_xxxx1.xml` (use the filename you assigned when renaming the files)  
-   **Check, check and double-check your filenames for correctness.** If you blow it, you could put your Vera in an endless reload Luup!
+   **Check, check and double-check these filenames for correctness.** If you blow it, you could put your Vera in an endless reload Luup!
 1. Go to *Apps > Develop apps > Test Luup code (Lua)* and enter and run: `luup.reload()`
 1. Hard refresh your browser [How?](https://www.getfilecloud.com/blog/2015/03/tech-tip-how-to-do-hard-refresh-in-browsers/)
 
@@ -218,7 +259,7 @@ When an action is invoked (for example, by the UI or `luup.call_action()` call),
 
 At this point, you should know that the service file (`S_.xml`) defines the state variables and actions that the plugin itself defines and maintains. It would therefore be expected (by Luup) that the actions named in the service file have a corresponding implementation in the `actionList` of the implementation file (`I_.xml`). So hopefully you are now getting an idea of how interconnected these files are, and if you're a little confused, you are rightly so. It's just part of the learning curve, but don't worry, you'll get there.
 
-### Other Files
+### Other Plugin Files
 
 There are a couple of other files in the PluginBasic package: `D_PluginBasic1.json` and `L_PluginBasic1.lua`. We'll cover these soon enough. For now, just know that the `D_.json` file contains the UI configuration to display the device's dashboard card and control panel interfaces, and the `L_.lua` file is a Lua module that contains the bulk of the plugin's implementation (this is where you will be doing the bulk of your work).
 
