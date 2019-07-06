@@ -211,15 +211,15 @@ As part of setting up your plugin using the framework, you will create a *Lua mo
 ### How Actions Work
 
 When an action is invoked (for example, by the UI or `luup.call_action()` call), Luup will do the following:
-1. Using the serviceId, it will look to see if the action is defined;
-2. If the action is defined for the service, it will look in the device's implementation file (`I_.xml`) for an `action` tag in the `actionList` section that contains a matching `serviceId` and `name`. 
-3. If it finds it in the implementation file, it runs the Lua fragments in the `run` and/or `job` tags.
+1. Using the service ID, it will look to see if the action is defined in the declarations loaded from the related service file (`S_.xml`);
+2. If the action is defined for the service, it will look in the device's implementation file (`I_.xml`) for an `action` tag in the `actionList` section that contains matching `serviceId` and `name` tags. 
+3. If it finds a matching `action` in the implementation file, it runs the Lua fragments in its `run` and/or `job` tags.
 
-### Got It?
+At this point, you should know that the service file (`S_.xml`) defines the state variables and actions that the plugin itself defines and maintains. It would therefore be expected (by Luup) that the actions named in the service file have a corresponding implementation in the `actionList` of the implementation file (`I_.xml`). So hopefully you are now getting an idea of how interconnected these files are, and if you're a little confused, you are rightly so. It's just part of the learning curve, but don't worry, you'll get there.
 
-At this point, you should know that the service file `S_PluginBasic1.xml` defines the state variables and actions that the plugin itself defines and maintains. It would therefore be expected (by Luup) that the actions named in the service file have a corresponding implementation in the `actionList` of the implementation file (`I_.xml`). So hopefully you are now getting an idea of how interconnected these files are, and if you're a little confused, you are rightly so. It's just part of the learning curve, but don't worry, you'll get there.
+### Other Files
 
-There are a couple of other files in the PluginBasic package: `D_PluginBasic1.json` and `L_PluginBasic1.lua`. We'll cover these soon enough.
+There are a couple of other files in the PluginBasic package: `D_PluginBasic1.json` and `L_PluginBasic1.lua`. We'll cover these soon enough. For now, just know that the `D_.json` file contains the UI configuration to display the device's dashboard card and control panel interfaces, and the `L_.lua` file is a Lua module that contains the bulk of the plugin's implementation (this is where you will be doing the bulk of your work).
 
 ## Creating Your Plugin
 
@@ -227,9 +227,17 @@ In order to make the plugin do the work you want it to do, you will need to modi
 
 ### `start( dev )`
 
-You will always need to modify this function. It is called to initialize and start your plugin, so you need to modify it to contain whatever needs to be done to get the work started. All of your startup code should go in here. **Do not modify the `startup` or `functions` code in `I_PluginBasic1.xml`.**
+You will always need to modify this function. It is called to initialize and start your plugin, so you need to modify it to contain whatever needs to be done to get the work started. All of your startup code should go in here. **Do not modify the `startup` or `functions` sections of `I_PluginBasic1.xml`.**
 
 Your `start` function should return two values: a boolean (`true` or `false`) success code, and a message (or `nil`). If the first value returned is anything other than `false`, the framework assumes that your plugin code has started successfully and will clear the device error state and return a success indication to Luup. If the value is `false`, or if an error is thrown by your code, the device will enter error state and the message provided returned to Luup to be displayed as a device error.
+
+```
+-- All is well
+return true
+
+-- No, startup didn't go well at all
+return false, "The auth information has not been set"
+```
 
 Your startup code must initialize all plugin-specific data. You can declare any module-global data you need at the top of the Lua file in the area indicated for this purpose. You may also load (using `require`) any other packages your code needs. The code will also need to place any watches on device state variables, or kick off any timer-based tasks, that it needs as part of its operation.
 
@@ -244,16 +252,18 @@ The `checkVersion()` function is expected to return a boolean (true/false) indic
 ## Getting To Work
 
 Once your startup code returns, your plugin is sitting waiting for something to happen. You need to add code to react to things that your plugin needs to act on. These may include:
-1. Time-based events, for example, handling the expiration of an interval timer;
-2. Device-based events, for example, handling a change in the state of a device you are monitoring;
-3. Handle an HTTP request made to the Vera with the plugin identified as the target to answer the request;
-3. Actions, for example, a request from the user/UI to perform some task the plugin is capable of performing.
+1. Time-based tasks, done by handling the expiration of interval timers;
+2. Device-based events, done by handling changes in the state of devices you are monitoring;
+3. Handling an HTTP request made to the Vera with the plugin identified as the target to answer the request;
+3. Actions on the plugin device(s), for example, a request from the user/UI to perform some task the plugin is capable of performing.
 
 If you don't do any of the above, your plugin basically runs at startup and does nothing else, so it's very rare that a plugin won't need to have code to handle at least one of the above conditions.
 
+Note that with the exception of the time-based tasks, these events are all asynchronous--you have no idea when they are coming, you just handle them when they come up.
+
 ## Additional Framework Functions
 
-The framework provides a set of utility functions under the `PFB` global object that you can call from your module.
+The framework provides a set of utility functions under the `PFB` global object that you can call from your plugin's Lua module.
 
 ### Time Delays and Intervals
 
