@@ -15,11 +15,11 @@ Those funky `urn:upnp-org:blah blah blah` names are important, and you have to g
 
 Service IDs identify a single service that contain the service's resources. They are, in essence, a *namespace* for resources associated with a service. Egad. What does all that mean?
 
-A namespace is simply an identifier (string) that is paired with another resource identifier (like a name or number) that helps more uniquely identify the resource and separate it from others with the same name. For example, let's say you want to fly somewhere, and so you book Lufthansa flight 100 out of your local airport to where you're going. As it happens, Delta and United also have flights numbered 100 out of the same airport. On the day of your flight, you show up at the airport, late as usual, and hurriedly ask the Information Desk where flight 100 is boarding. What's the first question you will be asked in response? "What airline?" of course. Basically, "flight 100" is the resource name, but Delta, United, and Lufthansa are the namespaces that identify and separate all the "flight 100"'s so you can board the correct one. A resource is "owned" in a namespace, so to correctly identify the right resource, you need to refer to it *both* by its namespace (Lufthansa) and its specific resource name (flight 100). The goal of namespaces is to create something unique enough that when coupled with the other identifying element(s) (a name, for example), one single resource is uniquely identified from all of the possible same-named/numbered resources that may exist in the environment.
+A namespace is simply an identifier (string) that is paired with another resource identifier (like a name or number) that helps more uniquely identify the resource and separate it from others in the same environment that may have the same name. For example, let's say you want to fly somewhere, and so you book Lufthansa flight 100 out of your local airport to where you're going. As it happens, Delta and United also have flights numbered 100 out of the same airport. On the day of your flight, you show up at the airport, late as usual, and hurriedly ask the Information Desk where flight 100 is boarding. What's the first question you will be asked in response? "What airline?" of course. Basically, "flight 100" is the resource name, but Delta, United, and Lufthansa are the namespaces that identify and separate all the "flight 100"'s so you can board the correct one. A resource is "owned" in a namespace, so to correctly identify the right resource, you need to refer to it *both* by its namespace (Lufthansa) and its specific resource name (flight 100). The goal of namespaces is to create something unique enough that when coupled with the other identifying element(s) (a name, for example), one single resource is uniquely identified from all of the possible same-named/numbered resources that may exist in the environment.
 
-To show the importance of namespaces in Luup, say you had a heating/cooling thermostat and you need to query it for its current setpoint. It has two setpoints--one for heating and one for cooling--so querying for "CurrentSetpoint" alone is ambiguous--you need to tell it which you want! Likewise, a lot of different services have a variable called "Status" that they use for some purpose. It's a very descriptive but also very generic name. Imagine the confusion (and complete disaster) that could happen if all those services tried to control the same variable!
+To show the importance of namespaces in Luup, say you had a heating/cooling thermostat and you need to query it for its current setpoint. It has two setpoints--one for heating and one for cooling--so querying for "CurrentSetpoint" alone is ambiguous--you need to tell it which you want! Likewise, a lot of different services have a variable called "Status" that they use for some purpose. It's a very descriptive but also very generic name. Imagine the confusion (and complete disaster) that could happen if all those services tried to control the same variable! Requiring that both the service ID and variable name be provided to query or set a variable removes this ambiguity.
 
-So variables, actions, and other resources in Vera are usually not just identified by name, but by the combination of a name and another string, such as a service ID.
+So variables, actions, and other resources in Vera are usually not just identified by name alone, but by the combination of a name and another string, such as a service ID.
 
 Taking a closer look at service IDs (and other namespaces in Vera), you can see there's a rhythm to their structure. They follow the UPnP standard (loosely). Let's look at a common one:
 
@@ -29,15 +29,15 @@ urn:upnp-org:serviceId:SwitchPower1
 
 You can see that the service ID has four *elements*, each of which is separated by a colon (":"). The "urn" first element is a fixed string (never changes) that means [*uniform resource name*](https://en.wikipedia.org/wiki/Uniform_Resource_Name), saying this string is a name for a well-known resource of some type. The second part, "upnp-org", is the namespace part of the service ID. It is usually derived from an Internet domain name, with the dots changed to dashes, but can be anything as long as it uniquely identifies the organization or entity that created and maintains the resource definition. Since binary switches have a standard UPnP definition, UPnP.org owns the definition and so the "upnp-org" namespace is used here. The third element is the fixed string "serviceId" and says that this URN is the name of a UPnP service (not a device type or other identifier). Finally, the last element, "SwitchPower1" is the name of the service itself. 
 
-> Really, elements one and three aren't necessary; it would be just as unique to use the shortcut `upnp-org:SwitchPower1`, since the "urn" and "serviceId" strings are repeated in all service IDs, so don't contribute to their uniqueness. But we don't do this because Vera would not see them as literally equal, and Vera uses the longer form. But for services that Vera doesn't define, we could in fact choose anything we want, because the specifics of the string's structure aren't significant to Vera/Luup, the string just needs to be unique.  You can have a service ID simply called "frodo" without any colons or the four elements, and that would work, it would just violate the "social convention" that we developers try to stick with by using the UPnP form.
+> Really, elements one and three aren't necessary; it would be just as unique to use the shortcut `upnp-org:SwitchPower1`, since the "urn" and "serviceId" strings are repeated in all service IDs, so don't contribute to their uniqueness. But we don't do this because Vera would not see them as literally equal, and Vera uses the longer form. But for services that Vera doesn't define, we could in fact choose anything we want, because the specifics of the string's structure aren't actually significant to Vera/Luup, the string just needs to be unique.  You could have a service ID simply called "frodo" without any colons or the four elements, and that would work, it would just violate the "social convention" that we developers try to stick with by using the UPnP form.
 
 ### Defining Your Own Namespace
 
-As a Vera developer, you will be in the position of creating new services. As such, you need a namespace, a string that identifies you alone, or at least has a low risk of being used by others in the Vera world, in which your new services can be defined. Ignoring this is the first place where I think a lot of new Vera developers go wrong in writing their own plugins: they use someone else's plugin as a template to get started, and while they must change the service name in the service IDs to match their new plugin name, they don't change the namespace to something they own, so they are effectively highjacking someone else's namespace/domain. This is how you end up with third-party plugins and devices defining new services in the `micasaverde-com` namespace, which belongs to eZLO/Vera. It also seems a lot of early Vera developers copied code from @futzle as a starting point for their new plugins, and as a result many old plugins in the app marketplace use the "futzle-com" namespace--and because of this, *she has often been asked for support for plugins that she didn't write!* Never use a namespace/domain that you don't own (and that includes upnp-org, micasaverde-com, futzle-com, etc.) for your new work.
+As a Vera developer, you will be in the position of creating new services. As such, you need a namespace--a string that identifies you alone, or at least has a low risk of being used by others in the Vera world--in which your new services can be defined. Ignoring this requirement is the first place where I think a lot of new Vera developers go wrong in writing their own plugins: they use someone else's plugin as a template to get started, and while they must change the service name in the service IDs to match their new plugin name, they don't change the namespace to something they own, so they are effectively highjacking someone else's namespace/domain. This is how you end up with third-party plugins and devices defining new services in the `micasaverde-com` namespace, which belongs to eZLO/Vera. It also seems a lot of early Vera developers copied code from @futzle as a starting point for their new plugins, and as a result many old plugins in the app marketplace use the "futzle-com" namespace--and because of this, *she has often been asked for support for plugins that she didn't write!* Never use a namespace/domain that you don't own (and that includes upnp-org, micasaverde-com, futzle-com, etc.) for your new work.
 
-Here are two good, simple ways to do create your own namespace: base it on an Internet domain name you own, or base it on your Vera Community user name.
+Here are two good, simple ways to create your own namespace: base it on an Internet domain name you own, or base it on your Vera Community user name.
 
-The best way to create your own namespace is to follow the UPnP convention Vera uses and use an Internet domain name that you own and plan on keeping indefinitely. So, if you happen to own "example.com", your UPnP namespace would be "example-com", and all of your service IDs and device types would use that as their second element (e.g. `urn:example-com:serviceId:SomeService1`).
+The best-practice way to create your own namespace is to follow the UPnP convention Vera uses and use an Internet domain name that you own and plan on keeping indefinitely. So, if you happen to own "example.com", your UPnP namespace would be "example-com", and all of your service IDs and device types would use that as their second element (e.g. `urn:example-com:serviceId:SomeService1`).
 
 If you don't own a Internet domain name, no problem. I recommend you just use your Vera Community username with "-vera", such as "rigpapa-vera" (don't use *that* one, of course--it's mine!--it's just an example). This also has the advantage of making it very easy for users to identify you as the developer of the plugin or responsible for a service definition they also may want to use, so you may want to use this approach even if you do own an Internet domain name.
 
@@ -51,13 +51,13 @@ There are a lot of good, free resources for Lua and learning Lua online, easily 
 
 ### Development Environment
 
-There is a good integrated development environment out there that connects to Vera and openLuup (search for ZeroBrane Studio or query @akbooer on the Vera Community Forums). I personally just use a text editor (Notepad++) on my Windows desktop; I find IDEs too constraining.
+There is a good integrated development environment out there that connects to Vera and openLuup (search for "ZeroBrane Studio" or query community user @akbooer on the Vera Community Forums). I personally just use a text editor (Notepad++) on my Windows desktop or Geany on Ubuntu; I find IDEs too constraining, but appreciate basic syntax highlighting.
 
-I think it is *much* easier to develop plugins on openLuup than on Vera directly. It's a good enough emulation that only the outliers of Vera peculiarisms would be out of your reach (and then you can just do that part directly on Vera). Installed locally on your desktop or made reachable by NFS/Samba network share, you can edit your source files in place (you have to upload every change to Vera, unless you relish using `vi` or `nano` over an `ssh` terminal on the Vera directly), and reloads (which you'll do a lot) are instantaneous. It is also much more forgiving of some things that are big landmines on Vera and can leave you in a hard reload loop or worse.
+I think it is *much* easier to develop plugins on openLuup than on Vera directly. It's a good enough emulation that only the outliers of Vera peculiarisms would be out of your reach (and then you can just do that part directly on Vera). Installed locally on your desktop or made reachable by NFS/Samba network share, you can edit your source files in place (you have to upload every change to Vera, unless you relish using `vi` or `nano` over an `ssh` terminal on the Vera directly), and Luup reloads (which you'll do a lot) are instantaneous. It is also much more forgiving of some things that are big landmines on Vera and can leave you in a hard reload loop or worse.
 
-In particular, if you only have one Vera, and you use it to control your house or you do not have continuous local access to it, I strongly recommend you use openLuup for all development.
+In particular, if you only have one Vera, and you use it to control your house or you do not have continuous local access to it, I strongly recommend you use openLuup for all development. It will make accidents less tragic.
 
-My development environment is openLuup running on an Ubuntu VM, a Windows desktop with Notepad++ for editing, and an Ubuntu laptop with openLuup for work on the road. I do not use an IDE. I also have a Vera3 and VeraPlus separate from my "production" (spouse-facing) unit so I can test/reboot/crash/factory reset at will. Still, backups are necessary and will save time.
+> FYI, my development environment is openLuup running on an Ubuntu VM, a Windows desktop with Notepad++ for editing, and an Ubuntu laptop with openLuup and Geany for work on the road. I also have a Vera3 and VeraPlus separate from my "production" (spouse-facing) unit so I can test/reboot/crash/factory reset at will. Although my Veras are "burners" (I don't care what's on them and can wipe them to factory fresh at will), I still think backups are necessary and save time.
 
 OK. Ready to begin? Let's get to the meat of it...
 
@@ -150,14 +150,14 @@ Take a look at the code in the Lua implementation module (`L_.xml`) and see if y
 
 ## Plugin Structure
 
-Now let's back off handling the code and get back to some important concept information.
+Now let's step back from the code for a bit and get back to some important background information: what is the structure of a plugin, and how does it hang together?
 
-A plugin is a small set of files that describe a device type and provide an implementation. The following are the files you will normally see defined, at a minimum, for a plugin:
-* D_*pluginname*1.xml - This is called the *device file*, and it defines the device type associated with the plugin, and what service the device/plugin supports, among other details.
-* I_*pluginname*1.xml - This is called the *implementation file*, and it contains the startup code for the plugin, the code for all actions the plugin implements, and sometimes (not necessarily) the core code of the plugin implementation.
-* S_*pluginname*1.xml - This is called the *service file*, and it describes the plugin's own state variables and actions (those that it defines uniquely).
+A plugin is a set of files that describe a device type and provide an implementation. The following are the files you will normally see defined, at a minimum, for any plugin:
+* D_*pluginname*1.xml - This is called the *device file*, and it defines the device type associated with the plugin, and what service the device/plugin supports, among other details. It is really the "root" of the information tree for the device/plugin. It all starts with the device file.
+* I_*pluginname*1.xml - This is called the *implementation file*, and it contains the startup code for the plugin, the code for all actions the plugin implements, and sometimes (not necessarily) the core code of the plugin implementation. Note that this is an XML file, but it contains code fragments. More on this later.
+* S_*pluginname*1.xml - This is called the *service file*. Most plugins will define their own service(s), so is usually at least one service file (for the plugin device itself), and can be multiple if the plugin introduces a number of new services. Service files describe the state variables that belong to the service, and the actions that the service is defined to support.
 
-The device file, at a minimum, declares the device type for the plugin and what services the plugin devices provide. Here's the device file for PluginBasic:
+So, starting from our "root"--the device file--let's take a look at the pieces. Here's the device file for PluginBasic. It defines the device type that all devices belonging to this plugin will use, and some other parameters.
 
 ```
 <?xml version="1.0"?>
@@ -194,87 +194,56 @@ The device file, at a minimum, declares the device type for the plugin and what 
 
 The device file has to have the structure shown. Not all of the tags shown need to have values, but at a minimum, the `deviceType` tag must be provided, along with a `serviceList` tag containing `service` tags for each service the plugin supports, and an `implementationList` tag naming one `implementationFile`. If you look at the example above, you can see that the service list names one service (`PluginBasic1`) and, via the `SCPDURL` tag, points to `S_PluginBasic1.xml` as the file containing the definition of that service's state variables and actions.
 
-So, the device file is really the "root" of a hierarchy pointing to other resources that make up the device/plugin definition.
+When creating a plugin, you will need to create/modify a device file. The Plugin Framework gives you a template device file--you've already modified it if you've gone through the quick-start steps above.
 
-The implementation file (`I_PluginBasic1.xml`) should contain the following top-level structure:
+The implementation file (`I_PluginBasic1.xml`) contains the implementation code of the plugin. It's an XML file, which unfortunately can make coding really difficult--most syntax highlighting editors will understand that the file is XML and highlight it using XML rules, but will not understand that the text inside the XML tags is code and highlight the interior text with code rules. There are also special characters that you can't use directly in XML (like \<, \>, \&) and need to be escaped, which is hard to remember, makes the code look terrible, and inhibits efforts to simply copy-paste code from outside.
 
-```
-<?xml version="1.0" encoding="UTF-8"?>
-<implementation>
-	<functions></functions>
-	<startup></startup>
-	<actionList></actionList>
-</implementation>
-```
+The implementation file contains three important tags/sections: `startup`, `functions`, and `actionList`. The `startup` tag defines the name of the function that is called to start the plugin/device. The `functions` tag contains the code that defines that function and provides any other functions necessary. The `actionList` defines the implementation code for every action the device/plugin must perform.
 
-The `startup` tag's text content contains the *name* of the function that is used to initialize and start the plugin (not a call to it--just the name of it). The function itself should be defined in Lua code within the body of the `functions` tag. If you look at the default implementation file for PluginBasic, this is its `startup` tag:
+Using the Plugin Framework, you will only have minimal need to modify the implementation file. Typically, you will only need to modify the `actionList` section, to add new actions to your plugin. You will not normally need to modify the `startup` and `functions` sections, and doing so may disrupt the operation of the framework. 
 
-```
-<startup>startPluginBasicImpl</startup>
-```
+**Do not modify any code/text in the `startup` or `functions` sections of the implementation file unless you really know what you are doing.**
 
-This declaration says that the plugin is started by having Luup call the function `startPluginBasicImpl`. Luup will call this function with a single argument: the device ID of the plugin device being started. The default declaration of the `startPluginBasicImpl` function looks like this:
+The framework provides its own mechanism for you to have startup code and supporting implementation code outside of the implementation file, in a Lua (`L_.lua`) file where the problems of editing code inside XML will not be an issue for you. 
 
-```
-<functions>
-	-- -------------------------------------------------------------------------------------------------------------------------
-	-- PluginBasic -- global change this to the name of your plugin (no spaces/specials) in all files.
-	-- YOURDOMAIN-NAME -- global change this to your domain name in all files. If you don't have one, you can make up a personal
-	--                    one, for example, johndoe-name. Should be all lower case. DO NOT USE micasaverde-com, upnp-org, futzle-com,
-	--                    etc. as that is highjacking of others' namespace!
-	-- -------------------------------------------------------------------------------------------------------------------------
-	function startPluginBasicImpl(dev)
+As part of setting up your plugin using the framework, you will create a *Lua module* containing your plugin's startup and implementation code. Your Lua module must contain a `start( startupDevice )` function and a few others, described below, as well as all other functions/code you need to define to complete your plugin.
 
-		luup.log( "PluginBasic luup startup " .. tostring(dev) )
+### How Actions Work
 
-		--[[
-			Load and initialize the module that contains the core code.
-			The pluginStart function will do the bulk of the work in getting
-			things rolling.
-		--]]
-		PluginBasicModule = require("L_PluginBasic1")
+When an action is invoked (for example, by the UI or `luup.call_action()` call), Luup will do the following:
+1. Using the serviceId, it will look to see if the action is defined;
+2. If the action is defined for the service, it will look in the device's implementation file (`I_.xml`) for an `action` tag in the `actionList` section that contains a matching `serviceId` and `name`. 
+3. If it finds it in the implementation file, it runs the Lua fragments in the `run` and/or `job` tags.
 
-		-- Register plugin request handler
-		luup.register_handler("_RequestCb", "PluginBasic")
-		
-		-- Startup hand-off to module.
-		return PluginBasicModule.pluginStart(dev)
-	end
-	
-	...etc...
-```
+### Got It?
 
-We'll ignore what this is actually doing at this moment. Just observe that the function is defined in the `functions` tag of the implementation file, and receives a single argument, which is the device number of the plugin device Luup wants started. The code of this function can do whatever it needs to do to make that happen, and we'll revisit that shortly.
+At this point, you should know that the service file `S_PluginBasic1.xml` defines the state variables and actions that the plugin itself defines and maintains. It would therefore be expected (by Luup) that the actions named in the service file have a corresponding implementation in the `actionList` of the implementation file (`I_.xml`). So hopefully you are now getting an idea of how interconnected these files are, and if you're a little confused, you are rightly so. It's just part of the learning curve, but don't worry, you'll get there.
 
-The `actionList` section of the implementation file provides the implementation for all actions that the plugin supports, from its own service, and from any other associated service. Note that by the device file naming a service as being supported by the plugin, that does *not* provide a default implementation of any actions that service defines. Every action defined by a named service that the plugin supports must be implemented by the plugin. This is what allows the `SetTarget` action in the `SwitchPower1` service to function properly to turn on a light, even though one light might be a Z-Wave device and another is a WiFi-connected bulb, each requiring completely different steps to get them from "off" to "on".
-
-At this point, you should know that the service file `S_PluginBasic1.xml` defines the state variables and actions that the plugin itself defines and maintains. It would therefore be expected (by Luup) that the actions named in the file have a corresponding implementation in the `actionList` of the implementation file. So hopefully you are now getting an idea of how interconnected these files are, and if you're a little confused, you are rightly so. It's just part of the learning curve, but don't worry, you'll get there.
-
-There are a couple of other files in the PluginBasic package: D_PluginBasic1.json and L_PluginBasic1.lua. We'll cover these soon enough.
+There are a couple of other files in the PluginBasic package: `D_PluginBasic1.json` and `L_PluginBasic1.lua`. We'll cover these soon enough.
 
 ## Creating Your Plugin
 
-In order to make the plugin do the work you want it to do, you will need to modify a few core functions in the Lua implementation module (`L_.lua`):
+In order to make the plugin do the work you want it to do, you will need to modify a few core functions in the Lua implementation module (`L_.lua`). This file is where all of your implementation code will go (except the "stubs" needed for any new actions you create--more on that later):
 
-### start( dev )
+### `start( dev )`
 
-You will always need to modify this function. It is called to initialize and start your plugin, so you need to modify it to contain whatever needs to be done to get the work started. All of your startup code should go in here. **Do not modify the startup code in `I_PluginBasic1.xml`.**
+You will always need to modify this function. It is called to initialize and start your plugin, so you need to modify it to contain whatever needs to be done to get the work started. All of your startup code should go in here. **Do not modify the `startup` or `functions` code in `I_PluginBasic1.xml`.**
 
-The function should return three values: a boolean (`true` or `false`) success code, and a message (or `nil`). If the first value returned is anything other than `false`, the framework assumes that your plugin code has started successfully and will clear the device error state and return a success indication to Luup. If the value is `false`, or if an error is thrown by your code, the device will enter error state and the message provided returned to Luup to be displayed as a device error.
+Your `start` function should return two values: a boolean (`true` or `false`) success code, and a message (or `nil`). If the first value returned is anything other than `false`, the framework assumes that your plugin code has started successfully and will clear the device error state and return a success indication to Luup. If the value is `false`, or if an error is thrown by your code, the device will enter error state and the message provided returned to Luup to be displayed as a device error.
 
-Your startup code must initialize all plugin-specific data. You can declare any module-global data you need at the top of the Lua file in the area indicated for this purpose. You may also load (using `require`) any other packages your code needs.
+Your startup code must initialize all plugin-specific data. You can declare any module-global data you need at the top of the Lua file in the area indicated for this purpose. You may also load (using `require`) any other packages your code needs. The code will also need to place any watches on device state variables, or kick off any timer-based tasks, that it needs as part of its operation.
 
-### runOnce( dev )
+### `runOnce( dev )`
 
 The `runOnce()` function is called the first time your plugin code runs in a new device. Use this for any one-time initializations you may need to perform. It will not be called again, unless the `Configured` state variable is set to anything other than "1" (digit one). The framework manages this state variable and decides whether or not `runOnce()` needs to be called, so do not call it directly from your own startup code, and do not manipulate `Configured` in any way.
 
-### checkVersion( dev )
+### `checkVersion( dev )`
 
 The `checkVersion()` function is expected to return a boolean (true/false) indicating that the current running Vera/Luup firmware is compatible with the plugin. If `false` is returned, the startup of the plugin will be aborted. If anything other than `false` is return, the plugin will be started.
 
 ## Getting To Work
 
-Once your startup code returns and startup completes, your plugin is sitting waiting for something to happen. You need to add code to react to things that your plugin needs to act on. These may include:
+Once your startup code returns, your plugin is sitting waiting for something to happen. You need to add code to react to things that your plugin needs to act on. These may include:
 1. Time-based events, for example, handling the expiration of an interval timer;
 2. Device-based events, for example, handling a change in the state of a device you are monitoring;
 3. Handle an HTTP request made to the Vera with the plugin identified as the target to answer the request;
@@ -437,7 +406,7 @@ With that in mind, on to step 3... declaring our action implementation in the pl
 			<serviceId>urn:upnp-org:serviceId:SwitchPower1</serviceId>
 			<name>SetTarget</name>
 			<run>
-				return _fpm.actionSetTarget( lul_device, lul_settings )
+				return pluginModule.actionSetTarget( lul_device, lul_settings )
 			</run>
 		</action>
 ```
@@ -474,11 +443,11 @@ At this point, you should have a pretty good idea of how this all hangs together
   The device number of the plugin instance currently running
 
 * `PFB.log( level, message [, ... ] )`  
-  Log a message to the log stream. The `level` argument can be selected from `PFB.LOGLEVEL`. The message is not logged if the `level` is less critical than the current value of `PFB.loglevel`. The message argument may contain position parameters, identified by a "%" character followed by a number; the corresponding extra argument (from among the ...) is inserted at that position in the output message.
+  Log a message to the log stream. The `level` argument can be selected from `PFB.LOGLEVEL`. The message is not logged if the `level` is less critical than the current value of `PFB.loglevel`. PFB log levels are *not* the same as Vera/Luup log levels. The `message` argument may contain position parameters, identified by a "%" character followed by a number; the corresponding extra argument (from among the ...) is inserted at that position in the output message. Note that all messages are logged to Luup's LuaUPnP.log (using `luup.log()`) at Vera/Luup level 50 except `warn` and `err` levels (see below), which are logged at Vera log levels 2 and 1 respectively; all of which by default are enabled in `/etc/cmh/cmh.conf`.
 * `PFB.LOGLEVEL`  
-  A table of constants for the various log levels. Includes (upper- and lowercase): ERR, WARN, NOTICE, INFO, DEBUG1, DEBUG2. These are used to pass to `PFB.log()` or set `PFB.loglevel`. The DEFAULT key is the default logging level for the framework (currently == INFO).
+  A table of constants for the various log levels. Includes (upper- and lowercase): ERR, WARN, NOTICE, INFO, DEBUG1, DEBUG2. These are used to pass to `PFB.log()` or set `PFB.loglevel`. The DEFAULT key is the default logging level for the framework (currently == INFO). These log levels are specific to the framework; they are *not* Vera log levels.
 * `PFB.loglevel`  
-  The current logging level. Messages less critical than this level will not be output to the log stream.
+  The current logging level. Messages less critical than this level will not be output to the log stream. The value is specific to the framework and related to `PFB.LOGLEVEL` above. This variable does *not* use the Vera/Luup log levels.
   
 * `PFB.var.getVar( variableName [, device [, serviceId ] ] )`  
   Returns (two values) the current value and timestamp of the named state variable. May be called with 1-3 arguments; if `device` is omitted or `nil`, the plugin device is assumed. if `serviceId` is omitted or `nil`, the plugin's service is assumed.

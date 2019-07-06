@@ -8,18 +8,18 @@
                            case) in all files. If you don't own an Internet
                            domain name, use "yourveracommunityname-vera".
                            DO NOT USE micasaverde-com, upnp-org, futzle-com,
-                           toggledbits-com, etc. as that is highjacking of 
+                           toggledbits-com, etc. as that is highjacking of
                            others' namespace!
         *** REFER TO THE README.md FILE FOR IMPORTANT INFO BEFORE MODIFYING ***
         ------------------------------------------------------------------ --]]
 
-        local pluginModuleName = "L_PluginBasic1" -- !!! Modify this to match the Lua main module name for the plugin (no .lua suffix here!)
+        local PLUGIN_MODULE_NAME = "L_PluginBasic1" -- !!! Modify this to match the Lua main module name for the plugin (no .lua suffix here!)
 
         --[[ ===== D O   N O T   M O D I F Y   B E L O W   T H I S   L I N E --]]
 
-        local _fpm
-        local logLevels = { ERR=1, ERROR=1, WARN=2, WARNING=2, NOTICE=3, INFO=4, DEBUG1=5, DEBUG2=6, 
-                            err=1, error=1, warn=2, warning=2, notice=3, info=4, debug1=5, debug2=6, 
+        local pluginModule
+        local logLevels = { ERR=1, ERROR=1, WARN=2, WARNING=2, NOTICE=3, INFO=4, DEBUG1=5, DEBUG2=6,
+                            err=1, error=1, warn=2, warning=2, notice=3, info=4, debug1=5, debug2=6,
                             DEFAULT=4, default=4,
                             [1]='err', [2]='warn', [3]='notice', [4]='info', [5]='debug1', [6]='debug2' }
 
@@ -83,12 +83,12 @@
 
         -- Get variable value (easy to go directly to luup, here just for consistency)
         local function getVar( var, dev, sid )
-            return luup.variable_get( sid or _fpm.MYSID, var, dev or PFB.device )
+            return luup.variable_get( sid or pluginModule.MYSID, var, dev or PFB.device )
         end
 
         -- Get numeric variable, or return default value if unset/empty/non-numeric
         local function getVarNumeric( name, dflt, dev, sid )
-            sid = sid or _fpm.MYSID -- use MYSID if sid not passed
+            sid = sid or pluginModule.MYSID -- use MYSID if sid not passed
             dev = dev or PFB.device -- use PFB.device if dev not passed
             local s = luup.variable_get( sid, name, dev ) or ""
             if s == "" then return dflt end
@@ -97,7 +97,7 @@
 
         -- Initialize a variable if it does not already exist.
         local function initVar( name, dflt, dev, sid )
-            sid = sid or _fpm.MYSID -- use MYSID if sid not passed
+            sid = sid or pluginModule.MYSID -- use MYSID if sid not passed
             dev = dev or PFB.device -- use PFB.device if dev not passed
             local currVal = luup.variable_get( sid, name, dev )
             if currVal == nil then
@@ -109,7 +109,7 @@
 
         -- Set variable, only if value has changed.
         local function setVar( name, val, dev, sid )
-            sid = sid or _fpm.MYSID -- use MYSID if sid not passed
+            sid = sid or pluginModule.MYSID -- use MYSID if sid not passed
             dev = dev or PFB.device -- use PFB.device if dev not passed
             val = (val == nil) and "" or tostring(val)
             local s = luup.variable_get( sid, name, dev )
@@ -122,7 +122,7 @@
         -- Delete a state variable. Newer versions of firmware do this by setting nil;
         -- older versions require a request (not implemented here).
         local function deleteVar( name, dev, sid )
-            sid = sid or _fpm.MYSID -- use MYSID if sid not passed
+            sid = sid or pluginModule.MYSID -- use MYSID if sid not passed
             dev = dev or PFB.device -- use PFB.device if dev not passed
             if luup.variable_get( sid, name, dev ) then
                 luup.variable_set( sid, name, nil, dev )
@@ -282,7 +282,7 @@
             if setVar("Configured", "1") ~= "1" then
                 P("one-time initialization for %1", dev)
                 initVar( "DebugMode", 0 )
-                _fpm.runOnce( dev )
+                pluginModule.runOnce( dev )
             end
 
             if getVarNumeric( "DebugMode", 0 ) ~= 0 then
@@ -291,24 +291,24 @@
             end
 
             -- Check firmware version
-            local vok,msg = _fpm.checkVersion( dev )
+            local vok,msg = pluginModule.checkVersion( dev )
             if vok == false then
                 L('err', msg or "This plugin does not run on this firmware.")
                 luup.set_failure( 1, dev )
-                return false, msg or "Incompatible firmware", _fpm._PLUGIN_NAME
+                return false, msg or "Incompatible firmware", pluginModule._PLUGIN_NAME
             end
 
             -- Register plugin request handler
             luup.register_handler("_RequestCb", pluginReqName)
 
-            local success,ret,msg = pcall( _fpm.start, dev )
+            local success,ret,msg = pcall( pluginModule.start, dev )
             if not success then
                 L({level=1,msg="Startup implementation failed: %1"}, ret)
                 luup.set_failure( 1, dev )
-                return false, "Startup implementation failed", _fpm._PLUGIN_NAME
+                return false, "Startup implementation failed", pluginModule._PLUGIN_NAME
             end
             luup.set_failure( 0, dev )
-            return ret ~= false, msg or "", _fpm._PLUGIN_NAME
+            return ret ~= false, msg or "", pluginModule._PLUGIN_NAME
         end
 
         -- _WatchCb is the callback function that will dispatch to the module
@@ -347,11 +347,11 @@
                 end
                 return '{"debug":'..tostring(debugMode)..',"PFB":'..PFB.VERSION..'}','application/json'
             end
-            if type( _fpm.handleRequest ) ~= "function" then return "ERROR\r\nRequest handler not implemented", "text/plain" end
-            return _fpm.handleRequest( req, parms, of, pluginDevice )
+            if type( pluginModule.handleRequest ) ~= "function" then return "ERROR\r\nRequest handler not implemented", "text/plain" end
+            return pluginModule.handleRequest( req, parms, of, pluginDevice )
         end
 
-        local function pluginJobWatch( devnum, jobnum, func, ... ) 
+        local function pluginJobWatch( devnum, jobnum, func, ... )
             P("pluginJobWatch(%1,%2,%3,...)", devnum, jobnum, func)
             local key = tostring( "%s;%s;%s", tostring(devnum), tostring(jobnum), tostring( func ) )
             if not next(pluginJobs or {}) then
@@ -385,14 +385,14 @@
         PFB.watch = { set=pluginDeviceWatch, clear=pluginDeviceWatchClear }
         PFB.job = { watch=pluginJobWatch, clear=pluginJobWatchClear, register=pluginTagJob }
         PFB.isOpenLuup = pluginIsOpenLuup
-        
+
         -- Expansion objects will go here
 
         -- Load plugin implementation module
-        _,_fpm = pcall( require, pluginModuleName )
-        -- if not package.loaded[pluginModuleName] then
-        if type( _fpm ) ~= "table" then
-            error( "Cannot load plugin implementation module "..pluginModuleName..": ".._tostring(_fpm) )
+        _,pluginModule = pcall( require, PLUGIN_MODULE_NAME )
+        -- if not package.loaded[PLUGIN_MODULE_NAME] then
+        if type( pluginModule ) ~= "table" then
+            error( "Cannot load plugin implementation module "..PLUGIN_MODULE_NAME..": ".._tostring(pluginModule) )
         end
 
         debugMode = false
@@ -402,11 +402,11 @@
         pluginTimers = {}
         pluginNextTID = 0
         pluginMasterSerial = 0
-        pluginFlags = { debug=true }
-        pluginName = _fpm._PLUGIN_NAME
-        pluginIdent = _fpm._PLUGIN_COMPACT or _fpm._NAME:gsub("^L_", ""):gsub("1$", "")
-        pluginReqName = _fpm._PLUGIN_REQUESTNAME or pluginIdent
-        pluginSID = _fpm.MYSID or "urn:YOURDOMAIN-NAME:serviceId:PluginBasic1"
+        pluginFlags = { debug=false }
+        pluginName = pluginModule._PLUGIN_NAME
+        pluginIdent = pluginModule._PLUGIN_COMPACT or pluginModule._NAME:gsub("^L_", ""):gsub("1$", "")
+        pluginReqName = pluginModule._PLUGIN_REQUESTNAME or pluginIdent
+        pluginSID = pluginModule.MYSID or "urn:YOURDOMAIN-NAME:serviceId:PluginBasic1"
 
         --[[ ===== D O   N O T   M O D I F Y   A B O V E   T H I S   L I N E --]]
     </functions>
@@ -419,8 +419,8 @@
             <name>Example</name>
             <run>
                 -- This is about all you should ever need in this file--just pass it on!
-                -- Your loaded module is stored in _fpm
-                return _fpm.actionExample( lul_device, lul_settings )
+                -- Your loaded module is stored in pluginModule
+                return pluginModule.actionExample( lul_device, lul_settings )
                 -- alternately, you could use this syntax, using the module name directly
                 -- return L_PluginBasic1.actionExample( lul_device, lul_settings )
             </run>

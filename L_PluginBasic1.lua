@@ -88,25 +88,41 @@ function start( pdev )
 
 	-- Initialize your implementation local data here.
 	someDataIneed = {}
+	PFB.var.init( "Enabled", "1" )
 	PFB.var.init( "ExampleVariable", "Initial Value" )
 
 	-- Get your plugin rolling!
+
+	-- Example: Make sure we're Enabled...
+	if PFB.var.getNumeric( "Enabled", 1 ) == 0 then
+		PFB.log( PFB.LOGLEVEL.err, "Disabled by configuration; aborting startup." )
+		PFB.var.set( "ExampleVariable", "Disabled" )
+		return true, "Disabled"
+	end
 
 	-- Here's an example of how to set watch on a device state variable. When
 	-- the variable changes, the handleWatch() function above will be called.
 	-- We watch our own variable, just because we know the device and variable exist.
 	PFB.watch.set( pdev, MYSID, "ExampleVariable", variableChanged, "a1", "b2" )
 
-	-- Set the variable to make the watch fire
+	-- Set the variable to make the watch fire (see logged message that the
+	-- variableChanged() function emits when it gets called).
 	PFB.var.set( "ExampleVariable", "Started at "..os.date("%X"), pdev, MYSID )
 
 	-- Here's how we get a function to run every five seconds (interval timer)
 	local timerId = PFB.delay.interval( 5, timerExpired, "interval", "argument2" )
 
 	-- Here's how to get a function called once time in 60 seconds from now.
-	local onceId = PFB.delay.once( 60, timerExpired, "once", "argument2" )
-	
-	-- Here's the "real" way (no shortcuts) to log something.
+	-- This version uses a closure (an anonymous function). We pass the plugin
+	-- device number as an argument through to the function.
+	local onceId = PFB.delay.once( 60,
+		function( dev )
+			PFB.log.notice( "Dev #%1 at 60 seconds after startup.", dev )
+		end,
+		pdev
+	)
+
+	-- Here's the "real" way (no shortcuts) to log something at various levels.
 	PFB.loglevel = PFB.LOGLEVEL.DEBUG2 -- Set log level so we see all below
 	PFB.log( PFB.LOGLEVEL.debug2, 'This is a debug2 level message' )
 	PFB.log( PFB.LOGLEVEL.debug1, 'This is a debug1 level message' )
