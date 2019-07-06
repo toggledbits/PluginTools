@@ -43,7 +43,7 @@ This document corresponds to framework version 19184.
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## Before You Begin
+## Before You Begin (DO NOT SKIP THIS SECTION)
 There are a few things you need to know before you dive in. **Please make sure you take the time to read and understand this section.** It's important. You'll bypass a lot of weird bugs and troublesome roadblocks if have the basic concepts I'm about to explain firmly under your belt.
 
 ### Services
@@ -102,7 +102,7 @@ In particular, if you only have one Vera, and you use it to control your house o
 
 OK. Ready to begin? Let's get to the meat of it...
 
-## First Steps
+## First Steps (Setting Up a New Plugin)
 
 This section will cover what you need to do to give the template files the correct identities--those of you and your plugin. **Follow these instructions carefully and do the steps in exactly the order presented. Do not deviate.**
 
@@ -193,6 +193,8 @@ Take a look at the code in the Lua implementation module (`L_.xml`) and see if y
 ## Plugin Structure
 
 Now let's step back from the code for a bit and get back to some important background information: what is the structure of a plugin, and how does it hang together?
+
+### Core Plugin/Device Definition Files
 
 A plugin is a set of files that describe a device type and provide an implementation. The following are the files you will normally see defined, at a minimum, for any plugin:
 * D_*pluginname*1.xml - This is called the *device file*, and it defines the device type associated with the plugin, and what service the device/plugin supports, among other details. It is really the "root" of the information tree for the device/plugin. It all starts with the device file.
@@ -303,77 +305,7 @@ If you don't do any of the above, your plugin basically runs at startup and does
 
 Note that with the exception of the time-based tasks, these events are all asynchronous--you have no idea when they are coming, you just handle them when they come up.
 
-## Additional Framework Functions
-
-The framework provides a set of utility functions under the `PFB` global object that you can call from your plugin's Lua module.
-
-### Time Delays and Intervals
-
-The `PFB.timer.once()` and `PFB.timer.interval()` functions call a function after a specified delay. In the case of the former, the call is made only once; in the case of the latter, the call is made repeatedly at the interval specified. Both functions have identical argument lists, further described below.
-
-```
-local function timerFinished( word, num )
-	-- Stuff to do when the timer is done
-end
-
-PFB.timer.once( 5, timerFinished, "hello", 123 )
-```
-
-In the example above, you can see a prototypical function to handle the completion of a time interval, and the call to the timer function to call it after a five second delay. The timer function call takes at least two arguments: the time delay/interval in seconds, and the function reference to be called. Note that unlike `luup.call_delay()`, the function is specified by passing a function reference (basically, the function name without any parentheses or arguments). Any additional arguments to the timer call will be passed to the specified function; as we see in the above example, there is an additional string and numeric argument that will be passed and can be received the function.
-
-Because these calls take a function reference rather than a string with a function name, the function used can be `local` in scope; it does not need to be global. In fact, it can even be a Lua closure (known as an anonymous function in JavaScript):
-
-```
--- Turn the light on.
-luup.call_action( 'urn:upnp-org:serviceId:SwitchPower1', 'SetTarget', { newTargetValue="1" }, 123 )
--- Turn the light off after five seconds.
-PFB.timer.once( 5, function() 
-	luup.call_action( 'urn:upnp-org:serviceId:SwitchPower1', 'SetTarget', { newTargetValue="0" }, 123 )
-end )
-```
-
-Both functions will return a timer ID. There is only one purpose to this ID at this time: to cancel a timer. 
-
-A timer can be cancelled by passing its timer ID to `PFB.timer.cancel( timerID )`.
-
-You can run as many timers as you wish. The framework manages the scheduling of all of the timers and ensures that they are run as close to on time as Luup and the OS will permit. When two timers expire at the same time, their handler functions are run serially, and the order of their execution is non-deterministic (that is, there's no telling which will execute first). 
-
-The use of these functions over the `luup.call_delay()/call_timer()` functions is highly recommended.
-
-### Device State Variable/Service Watches
-
-Your plugin can watch a state variable on a device, or all state variables in a service on a device, by calling `PFB.watch.set( dev, serviceId, variableName, func, ... )`. 
-When the variable named on the specified device is changed, the framework will call the specified handler function (passed as a *function reference*, not a string containing the name). If there are arguments after the function reference, these "extra arguments" will be passed to the handler function later. If the `variableName` argument is omitted or `nil`, the watch handler will be called when *any* state variable in the named service on the device is modified.
-
-Your handler function must accept the following arguments that will be passed to it: `watchedDevice, serviceId, variableName, oldVal, newVal,  dev, ...`. The first three arguments received are the device number, service ID, and name of the changed variable. The `oldVal` argument is the prior value of the variable, and `newVal` is the new/current value. The `dev` argument is the plugin device number. If any extra arguments were passed to `PFB.watch.set()`, they will be passed to the handler after `dev`.
-
-Like the timer functions above, the fact that a function reference is used allows the handler function to be in any scope, it does not need to be a global as Luup's `luup.variable_watch` requires. And it can even be a closure.
-
-### Request Handler
-
-TBD
-
-### Logging
-
-Developing plugins will require that you write helpful diagnostic data someplace that you can get to it.
-
-The `PFB.debug(msg, ...)` and `PFB.log(msg, ...)` functions both log messages to the LuaUPnP log. The former (`debug`) only writes the message if debug is enabled (the global variable `debugMode` is set `true`).
-
-The message may contain references to additional arguments passed, identified by "%" followed by a number. When these are found in the message string, they are replaced with the text form of the indexed argument from the remaining arguments. They do not need to be used in order of the values passed. For example, `L("this is %1 and %2, or backwards %2 and %1", "alpha", "beta")` will log the string "this is alpha and beta, or backwards beta and alpha". The arguments can be any Lua data type; tables will be expanded into a human-readable pseudocode representation.
-
-### State Variable Handling
-
-The framework provides some convenience functions as alternatives to the Luup built-in `luup.variable_get()` and `luup.variable_set()`.
-
-The `PFB.var.get( variableName [, dev [, serviceId]] )` function returns the value of the named state variable on the specified device from the specified service, and the timestamp of the last modification (two values returned). If the service is omitted or `nil`, the plugin's service ID is assumed; if the device is omitted or `nil`, the plugin device is assumed. So, it is possible to retrieve the value of a variable belonging to the plugin device in the plugin service using only one argument, for example `PFB.var.get( "DebugMode" )`. Note that since this function returns two values, extra care must be taken when attempting to wrap this function in other functions like `tonumber()` (the Luup standard function has the same issue). Specifically for the case where `tonumber()` is desirable, use `PFB.var.getNumeric()` below, instead.
-
-The `PFB.var.getNumeric( variableName, defaultValue [, dev [, serviceId]] )` function returns the numeric value of a state variable. If the state variable is undefined, blank, or can't be converted to a number, the value of the `defaultValue` argument will be returned. For example, `PFB.var.getNumeric( 'Status', -1, 45, 'urn:upnp-org:serviceId:SwitchPower1' )` would get the value of the `Status` variable in the SwitchPower1 service from device 45, or if it doesn't exist, returns -1.
-
-The `PFB.var.init( variableName, value [, dev [, serviceId]] )` function initializes the value of a state variable to the value given *if it does not exist*; if it exists, it is not modified. 
-
-The `PFB.var.set( variableName, value [, dev [, serviceId]] )` function sets a state variable to the given value. If the state variable's current value is already equal to the target value, the variable is not changed, preserving the timestamp of the state variable, preventing modification of user_data as a result of the call, and preventing watches from triggering.
-
-## Using State Variables in Your Plugin
+### Using State Variables in Your Plugin
 
 State variables store data in a persistent fashion. The value of state variables is stored in a Luup structure called `user_data`, and this is periodically written to non-volatile storage.
 
@@ -383,7 +315,7 @@ You can create your own state variables as needed by your plugin.
 1. Declare state variables that should be "public" (e.g. contain data that may be useful outside of the plugin) in your plugin's service file (`S_.xml`).
 1. **DO NOT** create new state variables using other services--only create new variables in services you create and own as well, no matter what device you create it on. For example, it would be incorrect for your plugin to store some special data about a switch that it supervises in a new `MyData` variable in the `urn:upnp-org:serviceId:SwitchPower1` service--that is not a standard variable defined by the SwitchPower1 service. You can go ahead and use the `MyData` variable name, but use a service Id that's defined by your plugin instead.
 
-## Defining New Service Actions
+### Defining New Service Actions
 
 The service file (`S_.xml`) defines the actions of the related service. Since your plugin has its own service, that's the file in which you can declare your plugin-specific actions. By default, it contains only an example action called `Example`, and a framework action to set the debug/logging level called `SetLogLevel`.
 
@@ -397,7 +329,7 @@ If you want to create a new action in the plugin service, you must add its decla
 
 **Do not modify any service file in `/etc/cmh-lu` (the directory where Vera's defined services are kept), or the service file of any plugin you don't own.** For example, you must not create new actions for the `SwitchPower1` service; that's a standard service, and it's untouchable.
 
-## Implementing Service Actions 
+### Implementing Service Actions 
 
 Your plugin must provide an implementation for all service actions it is capable of performing in services it declares. This includes all actions defined by the plugin's own service, but also may include other services named in the device file (D_.xml). For example, if your plugin declares that it *supports* the `urn:upnp-org:serviceId:SwitchPower1` service (that is, it can emulate the standard behaviors of a binary switch), it should provide an implementation for `SetTarget` (the most commonly-used action in that service), and any other actions of that service that it can perform.
 
@@ -487,6 +419,76 @@ Note that our implementation prototype above also takes care of setting the `Sta
 At this point, you should have a pretty good idea of how this all hangs together. The device file (`D_.xml`) tells Luup which services the device supports. Luup goes out and reads the service files (`S_.xml`) for each of those services to understand the specific state variables and actions the services provide. When an action is invoked, Luup makes sure the service and action are part of the device's declared support, and if so, goes to the device's implementation file's `actionList` to find the action implementation and execute it. If any part of this chain is broken, the LuaUPnP log file will contain errors saying that the action isn't supported by the device.
 
 > NOTE: A common error that causes an action to be reported "not supported" when it appears everything is wired properly is a mispelling or change in capitalization of a name somewhere. Check every single reference, service Id, and name from the device file through the implementation and plugin module. It only takes a one-character difference to make the whole thing unravel.
+
+## Additional Framework Functions
+
+The framework provides a set of utility functions under the `PFB` global object that you can call from your plugin's Lua module.
+
+### Time Delays and Intervals
+
+The `PFB.timer.once()` and `PFB.timer.interval()` functions call a function after a specified delay. In the case of the former, the call is made only once; in the case of the latter, the call is made repeatedly at the interval specified. Both functions have identical argument lists, further described below.
+
+```
+local function timerFinished( word, num )
+	-- Stuff to do when the timer is done
+end
+
+PFB.timer.once( 5, timerFinished, "hello", 123 )
+```
+
+In the example above, you can see a prototypical function to handle the completion of a time interval, and the call to the timer function to call it after a five second delay. The timer function call takes at least two arguments: the time delay/interval in seconds, and the function reference to be called. Note that unlike `luup.call_delay()`, the function is specified by passing a function reference (basically, the function name without any parentheses or arguments). Any additional arguments to the timer call will be passed to the specified function; as we see in the above example, there is an additional string and numeric argument that will be passed and can be received the function.
+
+Because these calls take a function reference rather than a string with a function name, the function used can be `local` in scope; it does not need to be global. In fact, it can even be a Lua closure (known as an anonymous function in JavaScript):
+
+```
+-- Turn the light on.
+luup.call_action( 'urn:upnp-org:serviceId:SwitchPower1', 'SetTarget', { newTargetValue="1" }, 123 )
+-- Turn the light off after five seconds.
+PFB.timer.once( 5, function() 
+	luup.call_action( 'urn:upnp-org:serviceId:SwitchPower1', 'SetTarget', { newTargetValue="0" }, 123 )
+end )
+```
+
+Both functions will return a timer ID. There is only one purpose to this ID at this time: to cancel a timer. 
+
+A timer can be cancelled by passing its timer ID to `PFB.timer.cancel( timerID )`.
+
+You can run as many timers as you wish. The framework manages the scheduling of all of the timers and ensures that they are run as close to on time as Luup and the OS will permit. When two timers expire at the same time, their handler functions are run serially, and the order of their execution is non-deterministic (that is, there's no telling which will execute first). 
+
+The use of these functions over the `luup.call_delay()/call_timer()` functions is highly recommended.
+
+### Device State Variable/Service Watches
+
+Your plugin can watch a state variable on a device, or all state variables in a service on a device, by calling `PFB.watch.set( dev, serviceId, variableName, func, ... )`. 
+When the variable named on the specified device is changed, the framework will call the specified handler function (passed as a *function reference*, not a string containing the name). If there are arguments after the function reference, these "extra arguments" will be passed to the handler function later. If the `variableName` argument is omitted or `nil`, the watch handler will be called when *any* state variable in the named service on the device is modified.
+
+Your handler function must accept the following arguments that will be passed to it: `watchedDevice, serviceId, variableName, oldVal, newVal,  dev, ...`. The first three arguments received are the device number, service ID, and name of the changed variable. The `oldVal` argument is the prior value of the variable, and `newVal` is the new/current value. The `dev` argument is the plugin device number. If any extra arguments were passed to `PFB.watch.set()`, they will be passed to the handler after `dev`.
+
+Like the timer functions above, the fact that a function reference is used allows the handler function to be in any scope, it does not need to be a global as Luup's `luup.variable_watch` requires. And it can even be a closure.
+
+### Request Handler
+
+TBD
+
+### State Variable Handling
+
+The framework provides some convenience functions as alternatives to the Luup built-in `luup.variable_get()` and `luup.variable_set()`.
+
+The `PFB.var.get( variableName [, dev [, serviceId]] )` function returns the value of the named state variable on the specified device from the specified service, and the timestamp of the last modification (two values returned). If the service is omitted or `nil`, the plugin's service ID is assumed; if the device is omitted or `nil`, the plugin device is assumed. So, it is possible to retrieve the value of a variable belonging to the plugin device in the plugin service using only one argument, for example `PFB.var.get( "DebugMode" )`. Note that since this function returns two values, extra care must be taken when attempting to wrap this function in other functions like `tonumber()` (the Luup standard function has the same issue). Specifically for the case where `tonumber()` is desirable, use `PFB.var.getNumeric()` below, instead.
+
+The `PFB.var.getNumeric( variableName, defaultValue [, dev [, serviceId]] )` function returns the numeric value of a state variable. If the state variable is undefined, blank, or can't be converted to a number, the value of the `defaultValue` argument will be returned. For example, `PFB.var.getNumeric( 'Status', -1, 45, 'urn:upnp-org:serviceId:SwitchPower1' )` would get the value of the `Status` variable in the SwitchPower1 service from device 45, or if it doesn't exist, returns -1.
+
+The `PFB.var.init( variableName, value [, dev [, serviceId]] )` function initializes the value of a state variable to the value given *if it does not exist*; if it exists, it is not modified. 
+
+The `PFB.var.set( variableName, value [, dev [, serviceId]] )` function sets a state variable to the given value. If the state variable's current value is already equal to the target value, the variable is not changed, preserving the timestamp of the state variable, preventing modification of user_data as a result of the call, and preventing watches from triggering.
+
+### Logging
+
+Developing plugins will require that you write helpful diagnostic data someplace that you can get to it.
+
+The `PFB.debug(msg, ...)` and `PFB.log(msg, ...)` functions both log messages to the LuaUPnP log. The former (`debug`) only writes the message if debug is enabled (the global variable `debugMode` is set `true`).
+
+The message may contain references to additional arguments passed, identified by "%" followed by a number. When these are found in the message string, they are replaced with the text form of the indexed argument from the remaining arguments. They do not need to be used in order of the values passed. For example, `L("this is %1 and %2, or backwards %2 and %1", "alpha", "beta")` will log the string "this is alpha and beta, or backwards beta and alpha". The arguments can be any Lua data type; tables will be expanded into a human-readable pseudocode representation.
 
 ## Reference
 * `PFB.VERSION`  
