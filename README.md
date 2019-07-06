@@ -112,9 +112,9 @@ You can now install the template/skeleton and make it run. It won't do anything 
 To install (Vera):
 1. Using the upload at *Apps > Develop apps > Luup files*, or `scp` (which I happen to prefer), upload the files to your Vera. If using `scp`, place the files in `/etc/cmh-ludl/`. If using the UI-based uploader, drag all files as a group to the upload control. Alternately, you can upload one file at a time by click-and-pick, but you'll want to turn off "Restart luup after upload" until you get to the last file.
 1. Create the first plugin device. Go to *Apps > Develop apps > Create device* and fill in the fields below; leave the rest blank. Then hit the "Create" button.
-  * Description: The name of your plugin
-  * UPnP Device Filename: `D_xxxx1.xml` (use the filename you assigned when renaming the files)
-  * UPnP Implementation Filename: `I_xxxx1.xml` (use the filename you assigned when renaming the files)
+   * Description: The name of your plugin
+   * UPnP Device Filename: `D_xxxx1.xml` (use the filename you assigned when renaming the files)
+   * UPnP Implementation Filename: `I_xxxx1.xml` (use the filename you assigned when renaming the files)
 1. Go to *Apps > Develop apps > Test Luup code (Lua)* and enter and run: `luup.reload()`
 1. Hard refresh your browser [How?](https://www.getfilecloud.com/blog/2015/03/tech-tip-how-to-do-hard-refresh-in-browsers/)
 
@@ -202,7 +202,7 @@ The implementation file contains three important tags/sections: `startup`, `func
 
 Using the Plugin Framework, you will only have minimal need to modify the implementation file. Typically, you will only need to modify the `actionList` section, to add new actions to your plugin. You will not normally need to modify the `startup` and `functions` sections, and doing so may disrupt the operation of the framework. 
 
-**Do not modify any code/text in the `startup` or `functions` sections of the implementation file unless you really know what you are doing.**
+**WARNING: Do not modify any code/text in the `startup` or `functions` sections of the implementation file unless you really know what you are doing.**
 
 The framework provides its own mechanism for you to have startup code and supporting implementation code outside of the implementation file, in a Lua (`L_.lua`) file where the problems of editing code inside XML will not be an issue for you. 
 
