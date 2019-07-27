@@ -314,6 +314,7 @@ You can create your own state variables as needed by your plugin.
 1. When creating a new state variable, be sure to initialize it in your `runOnce()` or `start()` code.
 1. Declare state variables that should be "public" (e.g. contain data that may be useful outside of the plugin) in your plugin's service file (`S_.xml`).
 1. **DO NOT** create new state variables using other services--only create new variables in services you create and own as well, no matter what device you create it on. For example, it would be incorrect for your plugin to store some special data about a switch that it supervises in a new `MyData` variable in the `urn:upnp-org:serviceId:SwitchPower1` service--that is not a standard variable defined by the SwitchPower1 service. You can go ahead and use the `MyData` variable name, but use a service Id that's defined by your plugin instead.
+   > It is *perfectly fine* for you to create a state variable using your own service ID on any device, even if that device is not part of your plugin or created by it. For example, if you write a plugin that controls lights in groups, you can write a state variable with your group number on every light in that group, even though those lights are Z-Wave (or other) devices not directly under your control. The key is to *not* use the device's service ID or any other service ID you don't own--that's hijacking.
 
 ### Defining New Service Actions
 
