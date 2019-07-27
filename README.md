@@ -619,17 +619,17 @@ This will install the plugin on your Vera as if it was a published plugin you ha
 
   > NOTE: There is an "Install" button in the "Versions" list, but this is tied to old UI5 behavior; it doesn't work for UI7 systems.
 
-If your plugin appears to have installed correct, proceed to "Requesting Approval" below.
+If your plugin appears to have installed correctly, proceed to "Requesting Approval" below.
 
-If there was a problem with the installation of your plugin, such as a missing file or wrong version or contents for a file, go back to "Uploading Your Plugin Files" above and fix the broken file(s). You don't need to upload all of the files again, just the ones that were missing or mixed up.
+If there was a problem with the installation of your plugin, such as a missing file or wrong version or contents for a file, go back to "Uploading Your Plugin Files" above and fix the broken file(s). You don't need to upload all of the files again, just the ones that were missing or mixed up. Continue through all other steps as documented (see NOTE below).
 
-If you found a bug and had to correct code or XML/JSON data in your plugin files, no problem, make those fixes, and then head back to "Uploading Your Plugin Files" above and update the repaired files.
+If you found a bug and had to correct code or XML/JSON data in your plugin files, no problem, make those fixes, and then head back to "Uploading Your Plugin Files" above and update the repaired files. Continue through all other steps that follow as documented (see NOTE below).
 
-> NOTE: In both cases, when you come through again, you can use the same version number when you go to "Publish". I like to add a note in the comments so I can differentiate between the different release candidates: "RC1", "RC2", etc.
+> NOTE: In both cases, when you come through to creating a release candidate again, you can use the same version number when you go to "Publish". Since many candidates can have the same major/minor numbers, I like to add a note in the comments so I can differentiate between the different release candidates: "RC1", "RC2", etc.
 
 #### Requesting Approval
 
-Once you have a stable release candidate (Version) that installs correctly, you are ready to request approval from Vera to publish the release.
+Once you have a stable release candidate (Version) that installs correctly and passes your final QA, you are ready to request approval from Vera to publish the release.
 
 1. Go the "Versions" link in the plugin's "Edit plugin" page.
 1. In the "Add release" section, enter "Platform" as "any" for now, and leave the compatible firmware fields blank. 
@@ -643,9 +643,11 @@ Vera's current schedule for approving plugins (as of this writing) is *weekly*, 
 
 #### Editing Plugin Data
 
+If you find you have an error in your plugin's metadata or just need to update/freshen your plugin description or icon:
+
 1. Go to "My Plugins"
 1. Click "Edit" on your plugin
-1. Use the blue-boxed links at the top of the "Edit Plugin"
+1. Use the blue-boxed links at the top of the "Edit Plugin": "Plugin Info" and "UPNP"
 
 ### AltAppStore
 
