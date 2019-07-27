@@ -497,6 +497,18 @@ The `PFB.debug(msg, ...)` and `PFB.log(msg, ...)` functions both log messages to
 
 The message may contain references to additional arguments passed, identified by "%" followed by a number. When these are found in the message string, they are replaced with the text form of the indexed argument from the remaining arguments. They do not need to be used in order of the values passed. For example, `L("this is %1 and %2, or backwards %2 and %1", "alpha", "beta")` will log the string "this is alpha and beta, or backwards beta and alpha". The arguments can be any Lua data type; tables will be expanded into a human-readable pseudocode representation.
 
+> TIP: Keep the non-debug logging of your plugin down to messages that may be useful to your customer: error and warning messages, or confirmations of actions that could be useful. It's pretty annoying to have a plugin that logs every message it sends or receives to a device or remote site by default, when debug is off. It needlessly clutters up the log file for the user and makes it harder for them to diagnose *any* issue they may be having on the system.
+
+## Helpful Tools
+
+jsonlint.com
+
+XML Validator
+
+jshint.com (or installed locally)
+
+luacheck
+
 ## Best Practices for Plugin Implementation
 
 TBD MORE -- the DO's and DO NOT's of writing plugin code
@@ -507,6 +519,135 @@ TBD MORE -- the DO's and DO NOT's of writing plugin code
 * **DO NOT** assign any value to a state variable of a standard service other than the values allowed (these are sometimes specified in the service file's declaration of the variable).
 * **DO NOT** name a service file the same as any Vera-standard service file in `/etc/cmh-lu`, or that of another plugin--this overrides the intended definition with whatever is in your file, and may cause unpredictable behavior of your Vera or devices. Give your service a different name, and use a different filename. With respect to conflicts with other plugins, this can be a hard rule to follow, and may require coordination with other developers.
 * **DO NOT** use `luup.sleep()` if you can avoid it. Use the delay functions (in `PFB.timer` for example) to defer execution of your remaining code. Yes, this is more complicated, but using `luup.sleep()` has been shown to cause deadlocks for long intervals, and may have other side-effects.
+
+## Releasing Your Plugin
+
+**THIS SECTION IS VERY MUCH A WORK IN PROGRESS**
+
+Before releasing your plugin, make sure that you've removed all debug code, and set any debug or testing flags to their off, upright and stowed position.
+
+Do a clean install of your plugin on a system that doesn't already use it. If you don't have one, make a backup of your system, and then remove all plugin devices from your system. Do a reload and check the logs for plugin activity. Once you've confirmed that nothing related to the plugin is running anywhere, check *Apps > My apps* and make sure your plugin is not listed there; if it is, remove it. Finally, remove the plugin files from the system, and reload the system again. Check the log for error messages related to the plugin. This is your final check that you've forgotten to remove something.
+
+### Github
+
+### Vera App Marketplace
+
+Log in at http://apps.mios.com/. This is an old UI5 subsystem, so if you still have your Vera UI5 login information, it's likely this will work here. Otherwise, you'll need to request an account with Vera Support.
+
+Because this is an old "UI5" system, it's pretty long in the tooth, quirky, and has a few "gotchas". I'll flag these throughout.
+
+Vera is apparently replacing this system, but I have no idea when the new marketplace will be released, or how it will work.
+
+#### Creating a New Plugin
+
+If you are updating an existing plugin, skip this section and proceed to "Uploading Your Plugin Files".
+
+To create a new plugin: 
+
+1. Choose "My Plugins" from the "My Account" menu.
+1. Click the "Create plugin" link at the bottom of the page.
+1. Enter the title and description of your new plugin. The title is the plugin name, as it will appear in the app marketplace.
+1. Your "Instructions URL" can just be the URL of your Github repository.
+1. Select the best matching category.
+1. Make sure "Visibility" is set to "public"
+1. Copy-paste the device type, friendly name, and (if applicable) model name from your device file (D_.xml) into the fields. Then enter device and implementation filenames. Double-check for accuracy. 
+1. Click "Next". After a brief pause, the site should report "Plugin created" at the top of the page.
+1. The site now leaves you on an editing page for some of the plugin details you've already entered, and a few new things, like "Auto update" and "Allow multiple". Set these as appropriate to your application and hit "Update" if you've changed anything.
+1. Make a note of your plugin number, which appears both in the URL for the page and in the title bar of the page underneath the page header/navigation menus. 
+   > I like to put this number into my Lua module as a local constant `_PLUGIN_ID`. I use it in reports or to help some of my automated scripts on my development systems.
+1. Now go on to Uploading Your Plugin Files, below, skipping directly to step 3.
+
+#### Uploading Your Plugin Files
+
+In this section, you are going to add, update, and delete files in a list to make a releasable version. So this is a series of actions (adding, updating, and/or deleting files as much as necessary to get the file list and contents perfected), followed by a final "commit" step that commits the file list and contents as a "Version" that could be released.
+
+1. Go to "My Plugins" in the top navigation
+2. Find your plugin and click "Edit" to get to the "Edit plugin" page for your plugin.
+3. Click the blue-boxed "Plugin files" link near the top of the page.
+4. For each file in your plugin, either add the file if it is new, or update the file if it has been uploaded previously.
+
+*To add a new file to the list:*
+
+1. Scroll to the bottom of the "Plugin files" page and click "Choose file" in the "Add file" section.
+2. Locate the file on your local system and select it.
+3. Choose the "Role" for the file. Only your device file(s) (D_.xml) should receive the *Device file* role, and your implementation file (I_.xml) the *Implementation file* role. All service files (S_.xml) should receive the *Service file* role. All Lua files should receive the *Lua file* role. All JavaScript files should receive the *JavaScript* file role. Everything else can be *Miscellaneous*. You can correct these later (below) if you make a mistake.
+4. Click the "Add file" button next to the role menu to upload the file. It will then appear on the list of plugin files at the top of the page.
+
+*To remove a file from the list:*
+
+1. To remove a file, hit the "Delete" button next to the file.
+
+*To upload a new version of a listed file:*
+
+1. Find the file in the "Plugin files" section.
+2. Click the "Upload" button.
+3. Locate the file on your local system and select it. **Take care that you choose the right file.** It is very easy to accidentally upload the wrong file because some have similar names, e.g. `D_MyPlugin1.xml` and `D_MyPlugin1.json`, and this will break your plugin and a lot of users if that error sneaks through and gets auto-updated to every user.
+
+*Correcting the role of a listed file:*
+
+If you entered the wrong role for a file, correct it in the "Plugin files" list and hit the "Update Roles" button at the bottom of the list.
+
+*Committing The List*
+
+Once you have uploaded all of your plugin files (new or updates), enter a comment at the bottom of the "Plugin files" section. I usually use something like the date and plugin version number ("2019-07-27 ver 1.4"). It isn't terribly important, apparently.
+
+When ready, hit "Commit all". Then wait until the system comes back and tells you "All files committed." At this point, you have created a set of files as a "version" that is ready to made into a release candidate.
+
+> NOTE: Backing this operation apparently is Subversion or a very similar versioning tool. So there's another layer of change management working behind the scenes in addition to what you may be doing with Github or whatever you use. Don't worry--this doesn't get in your way or change how you need to manage your code.
+
+#### Creating a Release Candidate
+
+You are now ready to create a *release candidate*. A release candidate is set of files that could be released--if they pass final QA (there will be more testing coming).
+
+To make your release candidate:
+
+1. Click the "Versions" link in the top of your plugin's "Edit plugin" page.
+1. At the bottom of the page in the "Publish" section, enter the major and minor version number of this release, and any comment you wish to make with it.
+1. Click "Publish" to create the release candidate. This will appear listed in the "Versions" section of page. 
+
+#### Testing Your Release Candidate
+
+Before you turn this version out onto the world, it's a good idea to test that it installs properly from the app store. Even though it isn't published, you can easily do this:
+
+1. Go the the "Versions" tab of the "Edit plugin" page for your plugin, if you're not already there from the prior step.
+1. Make note of the plugin ID of your plugin by looking at the page URL or the page header below the top navigation.
+1. Find the "Versions" section of the "Versions" tab of the "Edit plugin" page, and there you will see a "Show files" button. 
+1. Click the "Show Files" button for the version you want to test-install. This will open a page that lists the names of the files in the version. While this doesn't seem that useful, if you look at the URL for this page, you will see the parameter "PK_VERSION" and a number. Make note of this number.
+1. On a browser with local access to your Vera, request the URL, replacing the capitalized parts with the matching data: http://YOUR-VERA-IP/port_3480/data_request?id=action&serviceId=urn:micasaverde-com:serviceId:HomeAutomationGateway1&action=CreatePlugin&PluginNum=YOURPLUGINID&Version=YOURPKVERSION 
+This will install the plugin on your Vera as if it was a published plugin you had selected from the list in *Apps > Install apps* in the Vera UI.
+1. When the install completes, which may take several minutes, hard-refresh your browser and test your plugin (again).
+
+  > NOTE: There is an "Install" button in the "Versions" list, but this is tied to old UI5 behavior; it doesn't work for UI7 systems.
+
+If your plugin appears to have installed correct, proceed to "Requesting Approval" below.
+
+If there was a problem with the installation of your plugin, such as a missing file or wrong version or contents for a file, go back to "Uploading Your Plugin Files" above and fix the broken file(s). You don't need to upload all of the files again, just the ones that were missing or mixed up.
+
+If you found a bug and had to correct code or XML/JSON data in your plugin files, no problem, make those fixes, and then head back to "Uploading Your Plugin Files" above and update the repaired files.
+
+> NOTE: In both cases, when you come through again, you can use the same version number when you go to "Publish". I like to add a note in the comments so I can differentiate between the different release candidates: "RC1", "RC2", etc.
+
+#### Requesting Approval
+
+Once you have a stable release candidate (Version) that installs correctly, you are ready to request approval from Vera to publish the release.
+
+1. Go the "Versions" link in the plugin's "Edit plugin" page.
+1. In the "Add release" section, enter "Platform" as "any" for now, and leave the compatible firmware fields blank. 
+1. Set the "Dev", "Alpha", "Beta", and "RC" fields to the version/candidate you just tested.
+1. Click "Add release". This will make a new entry in the "Releases" section.
+1. Click the "Request approval" button in the "Releases" entry for your candidate.
+
+Vera's current schedule for approving plugins (as of this writing) is *weekly*, on Monday mornings Romanian time (so overnight between Sunday and Monday in most of the US). Sometimes, particularly around holidays (both theirs and hours), they'll miss an approval cycle. I've found that you can email Vera Support or ping Sorin in the Community Forums and this usually gets someone to approve them pretty quickly.
+
+> NOTE: I've only had a plugin approval denied once, and that really was just a question about some code that I left in to transmit trace data to my server to assist debugging. Although I knew the code was not a risk and probably could have argued for its approval as-is, I voluntarily removed that code and they approved it right away. I actually felt good knowing that they are watching and not just anything gets through. That said, do not count on them to flag things that may be functionally plainly incorrect; that's not really what they're looking for.
+
+#### Editing Plugin Data
+
+1. Go to "My Plugins"
+1. Click "Edit" on your plugin
+1. Use the blue-boxed links at the top of the "Edit Plugin"
+
+### AltAppStore
 
 ## Reference
 * `PFB.VERSION`  
