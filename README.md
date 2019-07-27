@@ -651,7 +651,7 @@ If you find you have an error in your plugin's metadata or just need to update/f
 
 ### AltAppStore
 
-## Reference
+## Plugin Framework Basic Reference
 * `PFB.VERSION`  
    The current version of the Plugin Framework Basic
 * `PFB.device`  
