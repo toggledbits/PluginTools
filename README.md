@@ -265,6 +265,12 @@ At this point, you should know that the service file (`S_.xml`) defines the stat
 
 There are a couple of other files in the PluginBasic package: `D_PluginBasic1.json` and `L_PluginBasic1.lua`. We'll cover these soon enough. For now, just know that the `D_.json` file contains the UI configuration to display the device's dashboard card and control panel interfaces, and the `L_.lua` file is a Lua module that contains the bulk of the plugin's implementation (this is where you will be doing the bulk of your work).
 
+### Where Stuff Goes
+
+The files of plugins that you install from the Vera App/Plugin Marketplace, AltAppStore, or upload directly using the Luup uploader (in UI7 at *Apps > Develop apps > Luup files) will all be found in `/etc/cmh-ludl/`. If you are using `scp` to transfer plugin files to your Vera, be sure they land in this directory **only**.
+
+Vera's own device and service files live in `/etc/cmh-lu`. **This directory and the files in it are off-limits to you for modification!** But, you will need to read and study some of the files in that directory from time to time.
+
 ## Creating Your Plugin
 
 In order to make the plugin do the work you want it to do, you will need to modify a few core functions in the Lua implementation module (`L_.lua`). This file is where all of your implementation code will go (except the "stubs" needed for any new actions you create--more on that later):
@@ -489,6 +495,17 @@ Developing plugins will require that you write helpful diagnostic data someplace
 The `PFB.debug(msg, ...)` and `PFB.log(msg, ...)` functions both log messages to the LuaUPnP log. The former (`debug`) only writes the message if debug is enabled (the global variable `debugMode` is set `true`).
 
 The message may contain references to additional arguments passed, identified by "%" followed by a number. When these are found in the message string, they are replaced with the text form of the indexed argument from the remaining arguments. They do not need to be used in order of the values passed. For example, `L("this is %1 and %2, or backwards %2 and %1", "alpha", "beta")` will log the string "this is alpha and beta, or backwards beta and alpha". The arguments can be any Lua data type; tables will be expanded into a human-readable pseudocode representation.
+
+## Best Practices for Plugin Implementation
+
+TBD MORE -- the DO's and DO NOT's of writing plugin code
+
+* You should not rely on everything in the system being up and running when your plugin starts. Very often, Z-Wave and other device initializations are still taking place. If your plugin relies on the state of Z-Wave or other devices, you should wait until the Z-Wave device indicates that the network is up and running, and/or the devices in question are ready.
+* **DO NOT** modify any variable or replace any function in the `luup` global table.
+* **DO NOT** create state variables in a service you don't own, unless it's a standard variable of the service.
+* **DO NOT** assign any value to a state variable of a standard service other than the values allowed (these are sometimes specified in the service file's declaration of the variable).
+* **DO NOT** name a service file the same as any Vera-standard service file in `/etc/cmh-lu`, or that of another plugin--this overrides the intended definition with whatever is in your file, and may cause unpredictable behavior of your Vera or devices. Give your service a different name, and use a different filename. With respect to conflicts with other plugins, this can be a hard rule to follow, and may require coordination with other developers.
+* **DO NOT** use `luup.sleep()` if you can avoid it. Use the delay functions (in `PFB.timer` for example) to defer execution of your remaining code. Yes, this is more complicated, but using `luup.sleep()` has been shown to cause deadlocks for long intervals, and may have other side-effects.
 
 ## Reference
 * `PFB.VERSION`  

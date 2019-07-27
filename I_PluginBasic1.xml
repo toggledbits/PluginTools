@@ -216,6 +216,7 @@
             end
             -- Schedule next delay for next task.
             local delay = math.max( nextTimer.when - os.time(), 0 )
+			pluginTimers.master.when = os.time() + delay
             luup.call_delay( '_DelayCb', delay, lcbparm )
         end
 
@@ -303,11 +304,11 @@
 
             local success,ret,msg = pcall( pluginModule.start, dev )
             if not success then
-                L({level=1,msg="Startup implementation failed: %1"}, ret)
+                L(logLevels.err, "Startup implementation failed: %1", ret)
                 luup.set_failure( 1, dev )
                 return false, "Startup implementation failed", pluginModule._PLUGIN_NAME
             end
-            luup.set_failure( 0, dev )
+            luup.set_failure( ret ~= false and 0 or 1, dev )
             return ret ~= false, msg or "", pluginModule._PLUGIN_NAME
         end
 
@@ -319,7 +320,7 @@
                 P("_WatchCb() dispatching watch event %1 to %2", d.id, d.dev)
                 local success,err = pcall( d.func, dev, svc, var, oldVal, newVal, d.dev, unpack( d.args or {} ) )
                 if not success then
-                    L({level=1,msg="Watch handler failed: %1"}, err)
+                    L(logLevels.err, "Watch handler failed: %1", err)
                 end
             end
         end
