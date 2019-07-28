@@ -501,13 +501,14 @@ The message may contain references to additional arguments passed, identified by
 
 ## Helpful Tools
 
-jsonlint.com
+There are four essential tools in the Luup environment that will help you find errors in your source files. I view these as must-have/must-use. Ignore them at your own peril.
 
-XML Validator
+* [JSONLint](http://jsonlint.com) - A validator and pretty-printer for JSON file;
+* [CodeBeautify's XML Validator](https://codebeautify.org/xmlvalidator);
+* [JSHint](https://jshint.com) - A lint (code checker/analyzer) for JavaScript; can also be installed and run locally;
+* [Luacheck](https://github.com/mpeterv/luacheck) - A lint for Lua.
 
-jshint.com (or installed locally)
-
-luacheck
+JSHint and LuaCheck allow you to comment your code to silence certain messages they will generate, like access to globals (the Vera "api" global on the JavaScript side will cause errors unless you tell jshint it's OK), etc. See the docs for each to find out how that works, but be cautious--try to *fix* the error rather than silence it (don't put tape over your "check engine" light).
 
 ## Best Practices for Plugin Implementation
 
@@ -520,6 +521,10 @@ TBD MORE -- the DO's and DO NOT's of writing plugin code
 * **DO NOT** name a service file the same as any Vera-standard service file in `/etc/cmh-lu`, or that of another plugin--this overrides the intended definition with whatever is in your file, and may cause unpredictable behavior of your Vera or devices. Give your service a different name, and use a different filename. With respect to conflicts with other plugins, this can be a hard rule to follow, and may require coordination with other developers.
 * **DO NOT** use `luup.sleep()` if you can avoid it. Use the delay functions (in `PFB.timer` for example) to defer execution of your remaining code. Yes, this is more complicated, but using `luup.sleep()` has been shown to cause deadlocks for long intervals, and may have other side-effects.
 
+## Using Github to Manage Code and Development
+
+TBD, but suffice it to say: (a) you should use Github to manage and store your code; and (b) this section will not be a detailed treatise on how Github works and how to use it--it will provide general information and recommendations for repository structure and content--learning how to use Github is OT for this document.
+
 ## Releasing Your Plugin
 
 **THIS SECTION IS VERY MUCH A WORK IN PROGRESS**
@@ -528,9 +533,7 @@ Before releasing your plugin, make sure that you've removed all debug code, and 
 
 Do a clean install of your plugin on a system that doesn't already use it. If you don't have one, make a backup of your system, and then remove all plugin devices from your system. Do a reload and check the logs for plugin activity. Once you've confirmed that nothing related to the plugin is running anywhere, check *Apps > My apps* and make sure your plugin is not listed there; if it is, remove it. Finally, remove the plugin files from the system, and reload the system again. Check the log for error messages related to the plugin. This is your final check that you've forgotten to remove something.
 
-### Github
-
-### Vera App Marketplace
+### Releasing to the Vera App Marketplace
 
 Log in at http://apps.mios.com/. This is an old UI5 subsystem, so if you still have your Vera UI5 login information, it's likely this will work here. Otherwise, you'll need to request an account with Vera Support.
 
@@ -650,6 +653,76 @@ If you find you have an error in your plugin's metadata or just need to update/f
 1. Use the blue-boxed links at the top of the "Edit Plugin": "Plugin Info" and "UPNP"
 
 ### AltAppStore
+
+The AltAppStore is a tool that is part of AltUI, an alternate UI for Vera and the default UI for openLuup. It is much easier to manage deployment of your plugin with AltUI than it is to manage it in the current Vera App Marketplace, but there's a trade-off: only a minority of Vera users use AltUI, and thus only a minority of users would have access to your plugin. As such, it's probably a good idea to release your plugin on both (and the AltAppStore is easy and doesn't add much work), but I would not recommend deploying on the AltAppStore exclusively, unless your plugin was intended to be used only on openLuup.
+
+The AltAppStore is built around Github as a source repository for your plugin, but it can also install plugins from the Vera App Marketplace. If you are going to deploy on the AltAppStore, using the Github source is highly recommended, so if you are not managing your plugin code in Github, now's the time to make that leap.
+
+### Preparing Your Github Repository for AltAppStore Deployment
+
+1. Create a "release" in your Github repository, which also creates a tag (you have to set the tag name, and something of the form "v1.5" is recommended). Make note of this tag name--you'll need it later.
+
+### Creating a New Plugin
+
+1. In ALTUI, choose "App Store" from the "More" menu.
+2. Click the "Publish" link in the left navigation.
+3. Choose "Create" in the "Select an App" dropdown (if you are updating an existing plugin, go to "Updating an Existing Plugin" below.
+4. Choose "Create" in the "Select a Version" dropdown.
+5. In the Application section, put in the Vera plugin number if you have deployed your plugin through the Vera App Marketplace; otherwise, leave this 0 (zero).
+6. Enter the "App Title" and "Description".
+7. Set "AllowMulitple" to 1 if it's OK that users create multiple instances of your plugin.
+8. Set "AutoUpdate" to 1 if you want your plugin to auto-update for users by default (users can override this setting).
+9. Provide the URL to the icon for the device.
+10. Enter the "Version Major" and "Version Minor" for your first release (e.g. Version Major=1, Version Minor=0 for version 1.0)
+11. Click the "Device" heading to open the Device section.
+12. Enter the "DeviceFileName" (the name of your D_.xml file).
+13. Copy-paste the device type from your device file (D_.xml) to the "DeviceType" field. Remember this needs to be the text from the <deviceType> XML tag, *not* the service ID.
+14. Enter the filename of the implementation file (I_.xml) in the "ImplFile" field.
+15. Click the "Github" heading to open the Github section.
+16. Copy-paste this string into the "pattern" field: `[DIJLS]_.*`
+  > This is a Lua pattern string that will be used to match the files installed. Any file not matching this pattern will not be installed. The default pattern given above matches the typical naming convention recommended in this document and will work in most cases, but if you have other files you need to include or a different naming convention, you may need to create a pattern of your own.
+17. Set the "source" field to `your-github-username/repository-name` (e.g. `exampleuser/MyPlugin`). This is where the AltAppStore will go to get release files.
+18. Leave the "folders" field blank, unless you have put your source code in folders below the root of the Github repository (e.g. a "src" subfolder in the repository). In that case, put the name of each folder from which files need to be installed into a comma-separated list.
+19. In the "release" field, enter the tag name from when you created the release on Github.
+21. If (and only if) this version of your plugin has been submitted for approval in the Vera App Marketplace, click the "Vera Store" heading and enter the "PKVERSION" number in the "release" field. **Make sure the App ID" in the Application section has also been set correctly!**
+22. Click the "Create" button to create the new AltAppStore release.
+
+There is no approval cycle for the AltAppStore. Your plugin is available immediately. Go to "App Store" from under the "More" menu and find your plugin in the listings there. Go ahead and do a test install, and make everything works out right.
+* If you find a bug and need to change code, and you just released the plugin, it's probably best to just go fix the code, delete the release on Github and create a new release using the same tag. No changes need to be made in the AltAppStore--it just installs whatever the Github tag is attached to, so it will automatically install the newer tagged release.
+* If you find a bug later and it's been a while since you released the plugin, it's probably best to create a new release minor version (see "Updating an Existing Plugin" below). This avoids confusion of having "version 1.0" in the wild with two different code bases.
+* If you just mis-entered some data above and need to correct it, go back into the Publish mode, select your plugin from the "Select an App" dropdown, and select your newly-created version from the "Select a Version" dropdown. Then go through the sections/fields, making any changes needed, and then finally hit the "Modify" button when done. This will modify the release in place.
+
+### Updating an Existing Plugin
+
+1. In ALTUI, choose "App Store" from the "More" menu.
+2. Click the "Publish" link in the left navigation.
+3. Choose your plugin name from the "Select an App" dropdown (if it's not there, you need to go to "Creating a New Plugin" above).
+4. Choose "Create" in the "Select a Version" dropdown.
+5. In the Application section, all of your previously-supplied values (App Title, Description) should be present, but you will need to provide the new "Version Major" and "Version Minor" numbers for this version.
+11. You should not need to change anything in the "Device" section, so click the "Github" heading to open that section.
+19. In the "release" field, enter the tag name from when you created the release on Github.
+20. If you have not released your plugin to the Vera App Marketplace, you may skip the remainder of this procedure.
+21. If this version of your plugin has been submitted for approval in the Vera App Marketplace, click the "Vera Store" heading and enter the "PKVERSION" number in the "release" field. **Make sure the App ID" in the Application section has also been set correctly!**
+22. Click the "Create" button to create the new AltAppStore release.
+
+Now, go find your app in the AltAppStore store interface, and install it your new version. Make sure everything works correctly and the install is complete.
+* If you find a bug and need to change code, and you just released the version, it's probably best to just go fix the code, delete the release on Github and create a new release using the same tag. No changes need to be made in the AltAppStore--it just installs whatever the Github tag is attached to, so it will automatically install the newer tagged release.
+* If you find a bug later and it's been a while since you released the plugin, it's probably best to create a new release minor version (see "Updating an Existing Plugin" below). This avoids confusion of having "version 1.0" in the wild with two different code bases.
+* If you just mis-entered some data above and need to correct it, go back into the Publish mode, select your plugin from the "Select an App" dropdown, and select your newly-created version from the "Select a Version" dropdown. Then go through the sections/fields, making any changes needed, and then finally hit the "Modify" button when done. This will modify the release in place.
+
+### Install Other Versions with AltAppStore
+
+In the "Publish Application" interface, one of the fields we encountered and had to set was the "release" field in the Github section. The AltAppStore matches this value to a tag in order to determine what Github release to draw the source files from.
+
+The "release" field is even more powerful than just this. You can also enter the name of a branch in the "release" field, and in this case, when asked to install, the AltAppStore will install whatever is in the HEAD of the named branch. This is great if you maintain, for example, separate "master" and "dev" branches. You can create an AltAppStore release based on the "dev" branch (i.e. with "dev" in the "release" field), and users will be able to install your bleeding-edge development versions directly.
+
+### Releasing Plugins from Github
+
+> NOTE: This section discusses (briefly) the notion of releasing your plugin directly from Github--that is, having your users download it from a branch or the "releases" area. If you are looking for information on managing your code and development using Github, see the "Using Github to Manage the Code" section, above.
+
+It is possible to release your plugin exclusively through Github or similar systems, and not use either the Vera App Marketplace or AltAppStore. But, installing from Github is an entirely manual process for your users and invites problems (like not uploading all of the new files on an update). Nonetheless, a lot of people do it, as the process and approval cycle for the Vera App Store can be a bit cumbersome and daunting, particular for plugins that have relatively low use (e.g. for specialized devices or functionality that only a few users may be interested in), and the AltAppStore does not work for users that don't use ALTUI.
+
+Releasing your plugin on Github is really a matter of structuring the repository in some way that you can give clear instructions to user on how to install, and then including those instructions in the repository. The typical instructions for installing from Github are not much different from the instructions given above for installing Plugin Framework Basic.
 
 ## Plugin Framework Basic Reference
 * `PFB.VERSION`  
