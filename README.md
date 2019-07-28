@@ -686,15 +686,15 @@ The AltAppStore is built around Github as a source repository for your plugin, b
 2. Click the "Publish" link in the left navigation.
 3. Choose "Create" in the "Select an App" dropdown (if you are updating an existing plugin, go to "[Updating an Existing Plugin](#updating-an-existing-plugin)" below).
 4. Choose "Create" in the "Select a Version" dropdown.
-5. In the Application section, put in the Vera plugin number if you have deployed your plugin through the Vera App Marketplace; otherwise, leave this 0 (zero).
+5. In the Application section, put in the Vera plugin number into "App ID" if you have deployed your plugin through the Vera App Marketplace; otherwise, leave it 0 (zero).
 6. Enter the "App Title" and "Description".
-7. Set "AllowMulitple" to 1 if it's OK that users create multiple instances of your plugin.
+7. Set "AllowMulitple" to 1 if it's OK for users to create multiple instances of your plugin.
 8. Set "AutoUpdate" to 1 if you want your plugin to auto-update for users by default (users can override this setting).
 9. Provide the URL to the icon for the device.
 10. Enter the "Version Major" and "Version Minor" for your first release (e.g. Version Major=1, Version Minor=0 for version 1.0)
 11. Click the "Device" heading to open the Device section.
 12. Enter the "DeviceFileName" (the name of your D_.xml file).
-13. Copy-paste the device type from your device file (D_.xml) to the "DeviceType" field. Remember this needs to be the text from the <deviceType> XML tag, *not* the service ID.
+13. Copy-paste the device type from your device file (D_.xml) to the "DeviceType" field. Remember this needs to be the text from the `<deviceType>` XML tag, *not* the service ID.
 14. Enter the filename of the implementation file (I_.xml) in the "ImplFile" field.
 15. Click the "Github" heading to open the Github section.
 16. Copy-paste this string into the "pattern" field: `[DIJLS]_.*`
