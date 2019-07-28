@@ -52,10 +52,10 @@ This document corresponds to framework version 19184.
     - [Requesting Approval](#requesting-approval)
     - [Editing Plugin Data](#editing-plugin-data)
   - [Releasing Your Plugin to AltAppStore](#releasing-your-plugin-to-altappstore)
-  - [Preparing Your Github Repository for AltAppStore Deployment](#preparing-your-github-repository-for-altappstore-deployment)
-  - [Creating a New Plugin](#creating-a-new-plugin-1)
-  - [Updating an Existing Plugin](#updating-an-existing-plugin)
-  - [Install Other Versions with AltAppStore](#install-other-versions-with-altappstore)
+    - [Preparing Your Github Repository for AltAppStore Deployment](#preparing-your-github-repository-for-altappstore-deployment)
+    - [Creating a New Plugin](#creating-a-new-plugin-1)
+    - [Updating an Existing Plugin](#updating-an-existing-plugin)
+    - [Install Other Versions with AltAppStore](#install-other-versions-with-altappstore)
   - [Releasing Plugins from Github](#releasing-plugins-from-github)
 - [Plugin Framework Basic Reference](#plugin-framework-basic-reference)
 
@@ -676,11 +676,11 @@ The AltAppStore is a tool that is part of AltUI, an alternate UI for Vera and th
 
 The AltAppStore is built around Github as a source repository for your plugin, but it can also install plugins from the Vera App Marketplace. If you are going to deploy on the AltAppStore, using the Github source is highly recommended, so if you are not managing your plugin code in Github, now's the time to make that leap.
 
-### Preparing Your Github Repository for AltAppStore Deployment
+#### Preparing Your Github Repository for AltAppStore Deployment
 
 1. Create a "release" in your Github repository, which also creates a tag (you have to set the tag name, and something of the form "v1.5" is recommended). Make note of this tag name--you'll need it later.
 
-### Creating a New Plugin
+#### Creating a New Plugin
 
 1. In ALTUI, choose "App Store" from the "More" menu.
 2. Click the "Publish" link in the left navigation.
@@ -710,7 +710,7 @@ There is no approval cycle for the AltAppStore. Your plugin is available immedia
 * If you find a bug later and it's been a while since you released the plugin, it's probably best to create a new release minor version (see "[Updating an Existing Plugin](#updating-an-existing-plugin)" below). This avoids confusion of having "version 1.0" in the wild with two different code bases.
 * If you just mis-entered some data above and need to correct it, go back into the Publish mode, select your plugin from the "Select an App" dropdown, and select your newly-created version from the "Select a Version" dropdown. Then go through the sections/fields, making any changes needed, and then finally hit the "Modify" button when done. This will modify the release in place.
 
-### Updating an Existing Plugin
+#### Updating an Existing Plugin
 
 1. In ALTUI, choose "App Store" from the "More" menu.
 2. Click the "Publish" link in the left navigation.
@@ -728,7 +728,7 @@ Now, go find your app in the AltAppStore store interface, and install it your ne
 * If you find a bug later and it's been a while since you released the plugin, it's probably best to create a new release minor version (see "Updating an Existing Plugin" below). This avoids confusion of having "version 1.0" in the wild with two different code bases.
 * If you just mis-entered some data above and need to correct it, go back into the Publish mode, select your plugin from the "Select an App" dropdown, and select your newly-created version from the "Select a Version" dropdown. Then go through the sections/fields, making any changes needed, and then finally hit the "Modify" button when done. This will modify the release in place.
 
-### Install Other Versions with AltAppStore
+#### Install Other Versions with AltAppStore
 
 In the "Publish Application" interface, one of the fields we encountered and had to set was the "release" field in the Github section. The AltAppStore matches this value to a tag in order to determine what Github release to draw the source files from.
 
