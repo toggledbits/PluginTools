@@ -25,6 +25,7 @@ This document corresponds to framework version 19184.
   - [Core Plugin/Device Definition Files](#core-plugindevice-definition-files)
   - [How Actions Work](#how-actions-work)
   - [Other Plugin Files](#other-plugin-files)
+  - [Where Stuff Goes](#where-stuff-goes)
 - [Creating Your Plugin](#creating-your-plugin)
   - [`start( dev )`](#start-dev-)
   - [`runOnce( dev )`](#runonce-dev-)
@@ -39,7 +40,24 @@ This document corresponds to framework version 19184.
   - [Request Handler](#request-handler)
   - [State Variable Handling](#state-variable-handling)
   - [Logging](#logging)
-- [Reference](#reference)
+- [Helpful Tools](#helpful-tools)
+- [Best Practices for Plugin Implementation](#best-practices-for-plugin-implementation)
+- [Using Github to Manage Code and Development](#using-github-to-manage-code-and-development)
+- [Releasing Your Plugin](#releasing-your-plugin)
+  - [Releasing to the Vera App Marketplace](#releasing-to-the-vera-app-marketplace)
+    - [Creating a New Plugin](#creating-a-new-plugin)
+    - [Uploading Your Plugin Files](#uploading-your-plugin-files)
+    - [Creating a Release Candidate](#creating-a-release-candidate)
+    - [Testing Your Release Candidate](#testing-your-release-candidate)
+    - [Requesting Approval](#requesting-approval)
+    - [Editing Plugin Data](#editing-plugin-data)
+  - [Releasing Your Plugin to AltAppStore](#releasing-your-plugin-to-altappstore)
+  - [Preparing Your Github Repository for AltAppStore Deployment](#preparing-your-github-repository-for-altappstore-deployment)
+  - [Creating a New Plugin](#creating-a-new-plugin-1)
+  - [Updating an Existing Plugin](#updating-an-existing-plugin)
+  - [Install Other Versions with AltAppStore](#install-other-versions-with-altappstore)
+  - [Releasing Plugins from Github](#releasing-plugins-from-github)
+- [Plugin Framework Basic Reference](#plugin-framework-basic-reference)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -590,13 +608,13 @@ In this section, you are going to add, update, and delete files in a list to mak
 
 If you entered the wrong role for a file, correct it in the "Plugin files" list and hit the "Update Roles" button at the bottom of the list.
 
-*Committing The List*
+*Finishing Up: Committing The List*
 
 Once you have uploaded all of your plugin files (new or updates), enter a comment at the bottom of the "Plugin files" section. I usually use something like the date and plugin version number ("2019-07-27 ver 1.4"). It isn't terribly important, apparently.
 
 When ready, hit "Commit all". Then wait until the system comes back and tells you "All files committed." At this point, you have created a set of files as a "version" that is ready to made into a release candidate.
 
-> NOTE: Backing this operation apparently is Subversion or a very similar versioning tool. So there's another layer of change management working behind the scenes in addition to what you may be doing with Github or whatever you use. Don't worry--this doesn't get in your way or change how you need to manage your code.
+> NOTE: Apparently, backing this operation on the server is Subversion or a very similar versioning tool. So there's another layer of change management working behind the scenes in addition to what you may be doing with Github or whatever you use. Don't worry--this doesn't get in your way or change how you need to manage your code.
 
 #### Creating a Release Candidate
 
@@ -646,15 +664,15 @@ Vera's current schedule for approving plugins (as of this writing) is *weekly*, 
 
 #### Editing Plugin Data
 
-If you find you have an error in your plugin's metadata or just need to update/freshen your plugin description or icon:
+If you find you have an error in your plugin's Vera App Marketplace metadata (device type, auto-update, etc.) or just need to update/freshen your plugin description or icon:
 
 1. Go to "My Plugins"
 1. Click "Edit" on your plugin
-1. Use the blue-boxed links at the top of the "Edit Plugin": "Plugin Info" and "UPNP"
+1. Use the blue-boxed links at the top of the "Edit Plugin": "Plugin Info" and "UPNP" in particular.
 
-### AltAppStore
+### Releasing Your Plugin to AltAppStore
 
-The AltAppStore is a tool that is part of AltUI, an alternate UI for Vera and the default UI for openLuup. It is much easier to manage deployment of your plugin with AltUI than it is to manage it in the current Vera App Marketplace, but there's a trade-off: only a minority of Vera users use AltUI, and thus only a minority of users would have access to your plugin. As such, it's probably a good idea to release your plugin on both (and the AltAppStore is easy and doesn't add much work), but I would not recommend deploying on the AltAppStore exclusively, unless your plugin was intended to be used only on openLuup.
+The AltAppStore is a tool that is part of AltUI, an alternate UI for Vera and the default UI for openLuup. It is much easier to manage deployment of your plugin with AltAppStore than it is to manage it in the current Vera App Marketplace, but there's a trade-off: only a minority of Vera users use ALTUI, and thus only a minority of users would have access to your plugin. As such, it's probably a good idea to release your plugin on both (and the AltAppStore is easy and doesn't add much work), but I would not recommend deploying on the AltAppStore exclusively, unless your plugin was intended to be used only on openLuup.
 
 The AltAppStore is built around Github as a source repository for your plugin, but it can also install plugins from the Vera App Marketplace. If you are going to deploy on the AltAppStore, using the Github source is highly recommended, so if you are not managing your plugin code in Github, now's the time to make that leap.
 
@@ -666,7 +684,7 @@ The AltAppStore is built around Github as a source repository for your plugin, b
 
 1. In ALTUI, choose "App Store" from the "More" menu.
 2. Click the "Publish" link in the left navigation.
-3. Choose "Create" in the "Select an App" dropdown (if you are updating an existing plugin, go to "Updating an Existing Plugin" below.
+3. Choose "Create" in the "Select an App" dropdown (if you are updating an existing plugin, go to "[Updating an Existing Plugin](#updating-an-existing-plugin)" below).
 4. Choose "Create" in the "Select a Version" dropdown.
 5. In the Application section, put in the Vera plugin number if you have deployed your plugin through the Vera App Marketplace; otherwise, leave this 0 (zero).
 6. Enter the "App Title" and "Description".
@@ -680,23 +698,23 @@ The AltAppStore is built around Github as a source repository for your plugin, b
 14. Enter the filename of the implementation file (I_.xml) in the "ImplFile" field.
 15. Click the "Github" heading to open the Github section.
 16. Copy-paste this string into the "pattern" field: `[DIJLS]_.*`
-  > This is a Lua pattern string that will be used to match the files installed. Any file not matching this pattern will not be installed. The default pattern given above matches the typical naming convention recommended in this document and will work in most cases, but if you have other files you need to include or a different naming convention, you may need to create a pattern of your own.
+  > This is a Lua pattern string that will be used to match the files installed. Any file not matching this pattern will not be installed. The default pattern given above matches the typical naming convention recommended in this document and will work in most cases, but if you have other files you need to include or a different naming convention, you may need to create a pattern of your own. Just remember that this must use Lua pattern syntax, not JavaScript/RegExp.
 17. Set the "source" field to `your-github-username/repository-name` (e.g. `exampleuser/MyPlugin`). This is where the AltAppStore will go to get release files.
-18. Leave the "folders" field blank, unless you have put your source code in folders below the root of the Github repository (e.g. a "src" subfolder in the repository). In that case, put the name of each folder from which files need to be installed into a comma-separated list.
-19. In the "release" field, enter the tag name from when you created the release on Github.
+18. Leave the "folders" field blank, unless you have put your plugin's installable files in folders below the root of the Github repository (e.g. a "src" subfolder in the repository). In that case, put the name of each folder from which files need to be installed into a comma-separated list in this field.
+19. In the "release" field, enter the tag name from [when you created the release on Github](#preparing-your-github-repository-for-altappstore-deployment).
 21. If (and only if) this version of your plugin has been submitted for approval in the Vera App Marketplace, click the "Vera Store" heading and enter the "PKVERSION" number in the "release" field. **Make sure the App ID" in the Application section has also been set correctly!**
 22. Click the "Create" button to create the new AltAppStore release.
 
 There is no approval cycle for the AltAppStore. Your plugin is available immediately. Go to "App Store" from under the "More" menu and find your plugin in the listings there. Go ahead and do a test install, and make everything works out right.
 * If you find a bug and need to change code, and you just released the plugin, it's probably best to just go fix the code, delete the release on Github and create a new release using the same tag. No changes need to be made in the AltAppStore--it just installs whatever the Github tag is attached to, so it will automatically install the newer tagged release.
-* If you find a bug later and it's been a while since you released the plugin, it's probably best to create a new release minor version (see "Updating an Existing Plugin" below). This avoids confusion of having "version 1.0" in the wild with two different code bases.
+* If you find a bug later and it's been a while since you released the plugin, it's probably best to create a new release minor version (see "[Updating an Existing Plugin](#updating-an-existing-plugin)" below). This avoids confusion of having "version 1.0" in the wild with two different code bases.
 * If you just mis-entered some data above and need to correct it, go back into the Publish mode, select your plugin from the "Select an App" dropdown, and select your newly-created version from the "Select a Version" dropdown. Then go through the sections/fields, making any changes needed, and then finally hit the "Modify" button when done. This will modify the release in place.
 
 ### Updating an Existing Plugin
 
 1. In ALTUI, choose "App Store" from the "More" menu.
 2. Click the "Publish" link in the left navigation.
-3. Choose your plugin name from the "Select an App" dropdown (if it's not there, you need to go to "Creating a New Plugin" above).
+3. Choose your plugin name from the "Select an App" dropdown (if it's not there, you need to go to "[Creating a New Plugin](#creating-a-new-plugin-1)" above).
 4. Choose "Create" in the "Select a Version" dropdown.
 5. In the Application section, all of your previously-supplied values (App Title, Description) should be present, but you will need to provide the new "Version Major" and "Version Minor" numbers for this version.
 11. You should not need to change anything in the "Device" section, so click the "Github" heading to open that section.
