@@ -553,7 +553,7 @@ Do a clean install of your plugin on a system that doesn't already use it. If yo
 
 ### Releasing to the Vera App Marketplace
 
-Log in at http://apps.mios.com/. This is an old UI5 subsystem, so if you still have your Vera UI5 login information, it's likely this will work here. Otherwise, you'll need to request an account with Vera Support.
+Log in at http://apps.mios.com/. This is an old UI5 subsystem, so if you still have your Vera UI5 login information, it's likely this will work here. Otherwise, you can try creating an account at http://cp.mios.com/ or, failing that, you'll need to request an account with Vera Support.
 
 Because this is an old "UI5" system, it's pretty long in the tooth, quirky, and has a few "gotchas". I'll flag these throughout.
 
