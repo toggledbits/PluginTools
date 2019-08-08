@@ -313,6 +313,7 @@
         end
 
         -- _WatchCb is the callback function that will dispatch to the module
+		-- ??? Need support for nil variable and nil device
         function _WatchCb( dev, svc, var, oldVal, newVal )
             P("_WatchCb(%1,%2,%3,%4,%5)", dev, svc, var, oldVal, newVal)
             local key = string.format( "%d/%s/%s", dev, svc, var )
@@ -374,9 +375,45 @@
             end
         end
 
+		local function pluginDispatchAction( action, dev, params )
+			local func = pluginModule['action'..action]
+			if func then
+				local status,err = pcall( func, dev, params or {} )
+				if status == nil and err then
+					L('err', "Function action"..tostring(action).." threw an error or returned an invalid status: %1", err)
+					return -- invalid return values
+				end
+				return status,err
+			end
+			L('err', "Function action"..tostring(action).." not found in plugin module or may be declared local")
+			-- return nothing
+		end
+
+		function pluginCheckForUpdate( guser, grepo, channelInfo, force )
+			local gu = pcall( require, "GitUpdater" )
+			if type(gu) ~= "table" then
+				return false
+			end
+			if channelInfo == nil then channelInfo = gu.getBranchChannel( "master" ) end
+			return gu.checkForUpdate( guser, grepo, channelInfo, force )
+		end
+
+		function pluginDoUpdate( guser, grepo, uInfo )
+			local gu = pcall( require, "GitUpdater" )
+			if type(gu) ~= "table" then
+				return false
+			end
+			if uInfo == nil then
+				local status
+				status, uInfo = gu.checkForUpdate( guser, grepo, gu.getBranchChannel( "master" ), false )
+				if not status then return false end
+			end
+			return gu.doUpdate( uInfo )
+		end
+
         -- Exports for standard objects
         PFB = {}
-        PFB.VERSION = 19184
+        PFB.VERSION = 19216
         PFB.device = false
         PFB.log = L
         PFB.LOGLEVEL = logLevels
@@ -386,6 +423,7 @@
         PFB.watch = { set=pluginDeviceWatch, clear=pluginDeviceWatchClear }
         PFB.job = { watch=pluginJobWatch, clear=pluginJobWatchClear, register=pluginTagJob }
         PFB.isOpenLuup = pluginIsOpenLuup
+		PFB.updater = { check=pluginCheckForUpdate, update=pluginDoUpdate }
 
         -- Expansion objects will go here
 
@@ -413,19 +451,8 @@
     </functions>
     <startup>pluginStart</startup><!-- DO NOT MODIFY -->
     <actionList>
-        <!-- !!! Place your actions here. Generally, action implementations should be as small
-             as possible, ideally just a call to a module function... -->
-         <action>
-            <serviceId>urn:YOURDOMAIN-NAME:serviceId:PluginBasic1</serviceId>
-            <name>Example</name>
-            <run>
-                -- This is about all you should ever need in this file--just pass it on!
-                -- Your loaded module is stored in pluginModule
-                return pluginModule.actionExample( lul_device, lul_settings )
-                -- alternately, you could use this syntax, using the module name directly
-                -- return L_PluginBasic1.actionExample( lul_device, lul_settings )
-            </run>
-        </action>
+		<!-- DO NOT MODIFY FROM THIS LINE TO END OF SECTION
+		     ADD YOUR ACTIONS BELOW THE END OF THIS "DO NOT MODIFY" SECTION -->
         <!-- SetLogLevel -- defined in default service, DO NOT REMOVE -->
         <action>
             <serviceId>urn:YOURDOMAIN-NAME:serviceId:PluginBasic1</serviceId>
@@ -434,5 +461,18 @@
                 return pluginSetDebug( lul_device, lul_settings ) -- note this is a local function
             </run>
         </action>
+		<!-- END OF DO NOT MODIFY SECTION FOR ACTIONLIST -->
+
+<!-- !!! Place your actions below this line. -->
+         <action>
+            <serviceId>urn:YOURDOMAIN-NAME:serviceId:PluginBasic1</serviceId>
+            <name>Example</name>
+            <run>
+                -- Pretty much every action (run or job) should be implemented this way.
+				-- This will call your plugin's action implementation.
+				return pluginDispatchAction( "Example", lul_device, lul_settings )
+            </run>
+        </action>
+<!-- !!! Place your actions above this line. -->
     </actionList>
 </implementation>
