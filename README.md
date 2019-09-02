@@ -764,12 +764,16 @@ Releasing your plugin on Github is really a matter of structuring the repository
 * `PFB.var.initVar( variableName, defaultValue [, device [, serviceId ] ] )`
   Like setVar, but does *not* set the state variable if it already exists. Used for one-time initialization, primarily.
   
-* `PFB.timer.once( seconds, func [, ... ] )`  
-  Run a one-time timer for the specified number of seconds; upon its expiration, call the *function reference* (not a string) provided in `func` with any remaining arguments passed through. Returns a timer ID, which may be used to cancel the timer before its expiration by calling `PFB.timer.cancel()`.
+* `PFB.timer.once( [timerId, ] seconds, func [, ... ] )`  
+  Run a one-time timer for the specified number of seconds; upon its expiration, call the *function reference* (not a string) provided in `func` with any remaining arguments passed through. Returns the timer ID, which may be used to cancel the timer before its expiration by calling `PFB.timer.cancel()`, etc. By default, the timer ID is created with a unique value for each call to `once()` (so each call results in a separate timer). If you want a "well-known" timer for a singular purpose, you can pass a timer ID as the first argument, and that will be used--sometimes, having an assigned, well-known timer ID is just easier than having to store and pass a returned timer ID around.
 * `PFB.timer.interval( seconds, func [, ... ] )`  
-  Like `PFB.timer.once()` in every respect, except that the timer recurs on the interval provided automatically until cancelled.
+  Like `PFB.timer.once()` in every respect, except that the timer recurs on the interval provided automatically until cancelled. CAUTION: intervals less than 60 seconds are not good practice and may place an undue load on some systems. The return value of the function is the timer ID. The first call to `func` will occur at `seconds` after the timer is created.
 * `PFB.timer.cancel( timerID )`  
   Cancel the timer identified by `timerID`.
+* `PFB.timer.reschedule( timerID, seconds )`  
+  Reschedule a timer for `seconds` seconds in the future. If the timer is an interval timer, the interval is reset and will occur at the new time after the previous triggering.
+* `PFB.timer.get( timerID )`
+  Return the timer structure used by the timer. This is table containing keys `id`, `when`, `func`, `owner`, and `args`. This is for informational purposes only. The table contents should not be modified; modifying the table contents directly will not change scheduling of the timer and will likely disrupt the overall operation of timer functions.
   
 * `PFB.watch.set( device, serviceId, variableName, func [ , ... ] )`  
   Places a watch on the named state variable on the device. When it changes, the function (a *function reference*, not a string) will be called with the extra arguments passed through. If the `variableName` is `nil`, changes to any variable in the service on the device will trigger a call to the function/handler.
