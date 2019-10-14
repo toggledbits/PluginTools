@@ -160,7 +160,7 @@
 		end
 
 		-- Schedule a function for delayed execution. Creates a new timer.
-		local function nulltimer error"No function given to timer" end
+		local function nulltimer() error"No function given to timer" end
 		local function pluginTimer( seconds, func, ... )
 			local pid
 			if type(seconds) == "string" and type(func) == "number" then
@@ -182,7 +182,7 @@
 		end
 
 		local function pluginRescheduleTimer( pid, seconds )
-			if pluginTimers[pid] == nil then error "No timer "..pid end
+			if pluginTimers[pid] == nil then error("No timer "..tostring(pid)) end
 			if pluginTimers[pid].interval then
 				local delta = seconds - pluginTimers[pid].interval
 				pluginTimers[pid].interval = seconds
@@ -207,8 +207,6 @@
 			pluginTimers[pid].interval = seconds
 			return pid
 		end
-
-		local function nulltimer() L('warn', "Timer task has no callback function") end
 
 		-- Run eligible timers
 		local function execTimers( lcbparm )
