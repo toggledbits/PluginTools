@@ -27,7 +27,6 @@ MYTYPE = "urn:schemas-YOURDOMAIN-NAME:device:PluginBasic:1"	-- !!! Set me!
 MYSID = "urn:YOURDOMAIN-NAME:serviceId:PluginBasic1"	-- !!! Set me!
 
 
-
 --[[ ======================================================================= ]]
 
 -- !!! Declare your module-global data here, and require any other modules your
@@ -76,8 +75,8 @@ local function variableChanged( dev, sid, var, oldVal, newVal, pdev, a, b )
 end
 
 -- This example function will be called by the demo timer set below in start()
-local function timerExpired( a, b )
-	L("timerExpired() called! arguments: %1, %2", a, b)
+local function timerExpired( tid, a, b )
+	L("timerExpired() called! task %3 arguments: %1, %2", a, b, tid)
 	-- Just for fun, update our example variable
 	PFB.var.set( "ExampleVariable", "Now "..os.date("%X") )
 end
@@ -85,6 +84,10 @@ end
 -- Do local initialization of plugin instance data and get things rolling.
 function start( pdev )
 	D("start(%1)", pdev)
+
+	if PFB.VERSION < 20022 then
+		return false, "Please update PFB", _PLUGIN_NAME
+	end
 
 	-- Initialize your implementation local data here.
 	someDataIneed = {}
@@ -111,16 +114,19 @@ function start( pdev )
 
 	-- Here's how we get a function to run every five seconds (interval timer)
 	local timerId = PFB.delay.interval( 5, timerExpired, "interval", "argument2" )
+	PFB.log( "notice", "The interval task is %1", timerId )
 
 	-- Here's how to get a function called once time in 60 seconds from now.
 	-- This version uses a closure (an anonymous function). We pass the plugin
 	-- device number as an argument through to the function.
 	local onceId = PFB.delay.once( 60,
-		function( dev )
-			PFB.log.notice( "Dev #%1 at 60 seconds after startup.", dev )
+		function( tid, dev )
+			PFB.log( 'notice', "Dev #%1 at 60 seconds after startup.", dev )
+			PFB.delay.cancel( tid )
 		end,
 		pdev
 	)
+	PFB.log( "notice", "The 60 second task is %1", onceId )
 
 	-- Here's the "real" way (no shortcuts) to log something at various levels.
 	PFB.loglevel = PFB.LOGLEVEL.DEBUG2 -- Set log level so we see all below
@@ -132,10 +138,15 @@ function start( pdev )
 	PFB.log( PFB.LOGLEVEL.err, 'This is an err level message' )
 	PFB.loglevel = PFB.LOGLEVEL.DEFAULT -- Set log level so we see all below
 
+	-- New-style request handlers
+	PFB.request.register( "action", "test",
+		function( dev, parms, output_format ) PFB.log( PFB.LOGLEVEL.notice, "request handler for action=test" ) end )
+	PFB.request.register( "action", "clear",
+		function( dev, parms, output_format ) PFB.log( PFB.LOGLEVEL.notice, "request handler for action=clear" ) end )
+
 	-- If nothing else has gone wrong...
 	L("Startup complete/successful!")
-	luup.set_failure( 0, pdev )
-	return true, "OK"
+	return true
 end
 
 -- Required function to handle Luup requests (can be empty, but don't remove).
@@ -154,7 +165,7 @@ function handleRequest( request, parameters, outputformat, pdev )
 		-- local json = require "dkjson"
 		-- return json.encode( { text=parameters.text } ), "application/json"
 	else
-		return "ERROR\r\nInvalid request", "text/plain"
+		return "ERROR\nInvalid request (2)", "text/plain"
 	end
 end
 

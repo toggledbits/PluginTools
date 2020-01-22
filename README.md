@@ -454,12 +454,14 @@ The framework provides a set of utility functions under the `PFB` global object 
 The `PFB.timer.once()` and `PFB.timer.interval()` functions call a function after a specified delay. In the case of the former, the call is made only once; in the case of the latter, the call is made repeatedly at the interval specified. Both functions have identical argument lists, further described below.
 
 ```
-local function timerFinished( word, num )
+local function timerFinished( timerId, word, num )
 	-- Stuff to do when the timer is done
 end
 
 PFB.timer.once( 5, timerFinished, "hello", 123 )
 ```
+
+> CHANGE-20020: The timer callbacks now receive the timer ID as their first argument. This facilitates calling `reschedule()` or `cancel()` from within the callback function.
 
 In the example above, you can see a prototypical function to handle the completion of a time interval, and the call to the timer function to call it after a five second delay. The timer function call takes at least two arguments: the time delay/interval in seconds, and the function reference to be called. Note that unlike `luup.call_delay()`, the function is specified by passing a function reference (basically, the function name without any parentheses or arguments). Any additional arguments to the timer call will be passed to the specified function; as we see in the above example, there is an additional string and numeric argument that will be passed and can be received the function.
 
@@ -477,6 +479,8 @@ end )
 Both functions will return a timer ID. There is only one purpose to this ID at this time: to cancel a timer. 
 
 A timer can be cancelled by passing its timer ID to `PFB.timer.cancel( timerID )`.
+
+A timer can be rescheduled by calling `PFB.timer.reschedule( timerID, newseconds, ...)`. The first two arguments are required. The first is the ID of the existing timer; the second is the new schedule for the timer. If the timer is an interval timer, the interval is reset to `newseconds`; otherwise, the timer is scheduled for `newseconds` seconds in the future. If additional arguments are given, these will replace the extra arguments to be passed to the timer when it was created.
 
 You can run as many timers as you wish. The framework manages the scheduling of all of the timers and ensures that they are run as close to on time as Luup and the OS will permit. When two timers expire at the same time, their handler functions are run serially, and the order of their execution is non-deterministic (that is, there's no telling which will execute first). 
 
@@ -757,14 +761,14 @@ Releasing your plugin on Github is really a matter of structuring the repository
 * `PFB.loglevel`  
   The current logging level. Messages less critical than this level will not be output to the log stream. The value is specific to the framework and related to `PFB.LOGLEVEL` above. This variable does *not* use the Vera/Luup log levels.
   
-* `PFB.var.getVar( variableName [, device [, serviceId ] ] )`  
+* `PFB.var.get( variableName [, device [, serviceId ] ] )`  
   Returns (two values) the current value and timestamp of the named state variable. May be called with 1-3 arguments; if `device` is omitted or `nil`, the plugin device is assumed. if `serviceId` is omitted or `nil`, the plugin's service is assumed.
-* `PFB.var.getVarNumeric( variableName, defaultValue [, device [, serviceId ] ] )`  
-  Returns the numeric value of the named state variable. If the state variable is not defined, or its value blank or non-numeric, the value of `defaultValue` is returned. The `device` and `serviceId` parameters are optional and default as they do in `getVar()`.
-* `PFB.var.setVar( variableName, value [, device [, serviceId ] ] )`  
-  Sets the value of the named state variable to the value given, and returns the prior value. The `device` and `serviceId` parameters are optional and default as they do in `getVar()`.
-* `PFB.var.initVar( variableName, defaultValue [, device [, serviceId ] ] )`
-  Like setVar, but does *not* set the state variable if it already exists. Used for one-time initialization, primarily.
+* `PFB.var.getNumeric( variableName, defaultValue [, device [, serviceId ] ] )`  
+  Returns the numeric value of the named state variable. If the state variable is not defined, or its value blank or non-numeric, the value of `defaultValue` is returned. The `device` and `serviceId` parameters are optional and default as they do in `get()`.
+* `PFB.var.set( variableName, value [, device [, serviceId ] ] )`  
+  Sets the value of the named state variable to the value given, and returns the prior value. The `device` and `serviceId` parameters are optional and default as they do in `get()`.
+* `PFB.var.init( variableName, defaultValue [, device [, serviceId ] ] )`
+  Like `setVar`, but does *not* set the state variable if it already exists. Used for one-time initialization, primarily.
   
 * `PFB.timer.once( [timerId, ] seconds, func [, ... ] )`  
   Run a one-time timer for the specified number of seconds; upon its expiration, call the *function reference* (not a string) provided in `func` with any remaining arguments passed through. Returns the timer ID, which may be used to cancel the timer before its expiration by calling `PFB.timer.cancel()`, etc. By default, the timer ID is created with a unique value for each call to `once()` (so each call results in a separate timer). If you want a "well-known" timer for a singular purpose, you can pass a timer ID as the first argument, and that will be used--sometimes, having an assigned, well-known timer ID is just easier than having to store and pass a returned timer ID around.
@@ -772,8 +776,8 @@ Releasing your plugin on Github is really a matter of structuring the repository
   Like `PFB.timer.once()` in every respect, except that the timer recurs on the interval provided automatically until cancelled. CAUTION: intervals less than 60 seconds are not good practice and may place an undue load on some systems. The return value of the function is the timer ID. The first call to `func` will occur at `seconds` after the timer is created.
 * `PFB.timer.cancel( timerID )`  
   Cancel the timer identified by `timerID`.
-* `PFB.timer.reschedule( timerID, seconds )`  
-  Reschedule a timer for `seconds` seconds in the future. If the timer is an interval timer, the interval is reset and will occur at the new time after the previous triggering.
+* `PFB.timer.reschedule( timerID, seconds [, ... ] )`  
+  Reschedule a timer for `seconds` seconds in the future. If the timer is an interval timer, the interval is reset and will occur at the new time after the previous triggering. If additional arguments are given, they replace the extra arguments given when the timer was created.
 * `PFB.timer.get( timerID )`
   Return the timer structure used by the timer. This is table containing keys `id`, `when`, `func`, `owner`, and `args`. This is for informational purposes only. The table contents should not be modified; modifying the table contents directly will not change scheduling of the timer and will likely disrupt the overall operation of timer functions.
   
@@ -782,5 +786,10 @@ Releasing your plugin on Github is really a matter of structuring the repository
 * `PFB.watch.cancel( device, serviceId, variableName [, func ] )  
   Cancel a watch on a device state variable. If `func` is specified, only the watch that calls the function (passed by reference) is cancelled; otherwise, all watches for the device/state are cancelled.
 
-* `PFB.isOpenLuup()`  
+* `PFB.request.register( paramName, paramValue, func [, dev [, ... ] ] )`
+  Register a request handler to be called when a request is made using the plugin's request ID and the specified `paramName` is equal to `paramValue`. When matched, the function reference in `func` will be called, passing the device number (`dev` if provided, the plugin device number otherwise), and any additional arguments given.
+
+* `PFB.platform.isOpenLuup()`  
   Returns `true` if running under openLuup, `false` otherwise.
+* `PFB.platform.getInstallPath()`
+  Returns the pathname in which the plugin is installed.
