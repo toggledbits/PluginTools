@@ -591,8 +591,10 @@ In this section, you are going to add, update, and delete files in a list to mak
 
 1. Scroll to the bottom of the "Plugin files" page and click "Choose file" in the "Add file" section.
 2. Locate the file on your local system and select it.
-3. Choose the "Role" for the file. Only your device file(s) (D_.xml) should receive the *Device file* role, and your implementation file (I_.xml) the *Implementation file* role. All service files (S_.xml) should receive the *Service file* role. All Lua files should receive the *Lua file* role. All JavaScript files should receive the *JavaScript* file role. Everything else can be *Miscellaneous*. You can correct these later (below) if you make a mistake.
+3. Choose the "Role" for the file. Only your device file(s) (D_.xml) should receive the *Device file* role, and your implementation file (I_.xml) the *Implementation file* role. All service files (S_.xml) should receive the *Service file* role. All JavaScript files should receive the *JavaScript* file role. Everything else, including your Lua modules, should be *Miscellaneous*. You can correct these later (below) if you make a mistake.
 4. Click the "Add file" button next to the role menu to upload the file. It will then appear on the list of plugin files at the top of the page.
+
+> NOTE: This is a confirmation: Lua modules uploaded should be given the "Miscellaneous file" role. Do not assign them the "Lua file" role--if you do, the file will be run at startup, but this is not to the benefit of the plugin. It does not preload the plugin module, or cause one instance to be shared, etc. It may have unintended side-effects. The correct role is "Miscellaneous" in almost all cases.
 
 *To remove a file from the list:*
 
