@@ -181,7 +181,7 @@
 			return pid
 		end
 
-		local function pluginRescheduleTimer( pid, seconds )
+		local function pluginRescheduleTimer( pid, seconds, ... )
 			if pluginTimers[pid] == nil then error("No timer "..tostring(pid)) end
 			if pluginTimers[pid].interval then
 				local delta = seconds - pluginTimers[pid].interval
@@ -191,6 +191,10 @@
 				end
 			else
 				pluginTimers[pid].when = os.time()+seconds
+			end
+			-- Caller can optionally supply new arguments for next call
+			if arg and #arg then
+				pluginTimers[pid].args = arg
 			end
 			scheduleNextDelayRun()
 			return pid
@@ -467,7 +471,7 @@
 
 		-- Exports for standard objects
 		PFB = {}
-		PFB.VERSION = 19216
+		PFB.VERSION = 19304
 		PFB.device = false
 		PFB.log = L
 		PFB.LOGLEVEL = logLevels
