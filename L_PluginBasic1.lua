@@ -95,7 +95,7 @@ function start( pdev )
 
 	-- Example: Make sure we're Enabled...
 	if PFB.var.getNumeric( "Enabled", 1 ) == 0 then
-		PFB.log( PFB.LOGLEVEL.err, "Disabled by configuration; aborting startup." )
+		PFB.log( PFB.LOGLEVEL.WARN, "Disabled by configuration; aborting startup." )
 		PFB.var.set( "ExampleVariable", "Disabled" )
 		return true, "Disabled"
 	end
