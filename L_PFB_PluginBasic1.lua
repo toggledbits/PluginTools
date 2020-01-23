@@ -3,12 +3,15 @@ local M = {}
 M.VERSION = 20022
 M.SIGNATURE = "23b685bc-3d2e-11ea-85f9-035ca9e8fad3"
 M.device = false
-M.debugMode = false
 
 local logLevels = { ERR=1, ERROR=1, WARN=2, WARNING=2, NOTICE=3, INFO=4, DEBUG1=5, DEBUG2=6,
+					DEBUG3=7, DEBUG4=8, DEBUG5=9, DEBUG6=10,
 					err=1, error=1, warn=2, warning=2, notice=3, info=4, debug1=5, debug2=6,
+					debug3=7, debug4=8, debug5=9, debug6=10
 					DEFAULT=4, default=4,
-					[1]='err', [2]='warn', [3]='notice', [4]='info', [5]='debug1', [6]='debug2' }
+					[1]='err', [2]='warn', [3]='notice', [4]='info', [5]='debug1', [6]='debug2',
+					[7]='debug3', [8]='debug4', [9]='debug5', [10]='debug6'
+				}
 M.LOGLEVEL = logLevels -- synonym
 M.logLevel = M.LOGLEVEL.DEFAULT
 
@@ -18,7 +21,7 @@ local pluginTimers = {}
 local pluginRequests = {}
 local pluginNextTID = 0
 local pluginMasterSerial = 0
-local pluginFlags = { debug=true }
+local pluginFlags = { debug=false }
 
 -- Used for output of tables to debug stream
 local function dump(t, seen)
@@ -342,6 +345,7 @@ end
 local function actionSetDebug( pdev, parms )
 	P("actionSetDebug(%1,%2)", pdev, parms )
 	M.logLevel = (parms.debug or 0) ~= 0 and logLevels.debug2 or logLevels.DEFAULT
+	pluginFlags.debug = (parms.debug or 0) ~= 0
 end
 
 local function actionSetLogLevel( pdev, parms )
@@ -382,7 +386,6 @@ local function pluginStart( dev, pluginModuleName )
 	end
 
 	if getVarNumeric( "DebugMode", 0 ) ~= 0 then
-		M.debugMode = true
 		M.logLevel = logLevels['debug1']
 		L(logLevels['debug1'], "Plugin debug enabled by state variable DebugMode")
 	end
@@ -435,11 +438,11 @@ local function handleRequestCb( req, parms, of )
 	if parms.debug then
 		local n = tonumber( parms.debug )
 		if n then
-			M.debugMode=n~=0
+			pluginFlags.debug = n ~= 0
 		else
-			M.debugMode=not M.debugMode
+			pluginFlags.debug = not pluginFlags.debug
 		end
-		return '{"debug":'..tostring(M.debugMode)..',"PFB":'..M.VERSION..'}','application/json'
+		return '{"debug":'..tostring(pluginFlags.debug)..',"PFB":'..M.VERSION..'}','application/json'
 	elseif parms.pfbdump then
 		return dump( { timestamp=os.time(), M=M,
 			pluginWatches=pluginWatches, pluginTimers=pluginTimers, pluginRequest=pluginRequests,
@@ -546,22 +549,6 @@ local function installSubsystem( ident, mmod )
 	if M[ident] == nil then M[ident] = mmod end
 	return mmod
 end
-
---[[
--- Load plugin implementation module
-_,pluginFlags.module = pcall( require, PLUGIN_MODULE_NAME )
--- if not package.loaded[PLUGIN_MODULE_NAME] then
-if type( pluginFlags.module ) ~= "table" then
-	error( "Cannot load plugin implementation module "..PLUGIN_MODULE_NAME..": "..tostring(pluginFlags.module) )
-end
-if type(pluginFlags.module.MYSID) ~= "string" then error("Cannot find MYSID in "..PLUGIN_MODULE_NAME.."; make sure you have NOT declared it 'local'") end
-if type(pluginFlags.module._PLUGIN_NAME) ~= "string" then error("Cannot find _PLUGIN_NAME in "..PLUGIN_MODULE_NAME.."; make sure you have NOT declared it 'local'") end
-
-pluginFlags.module._PLUGIN_NAME = pluginFlags.module._PLUGIN_NAME
-pluginIdent = pluginFlags.module._PLUGIN_COMPACT or pluginFlags.module._NAME:gsub("^L_", ""):gsub("1$", "")
-pluginReqName = pluginFlags.module._PLUGIN_REQUESTNAME or pluginIdent
-pluginFlags.module.MYSID = pluginFlags.module.MYSID or "urn:YOURDOMAIN-NAME:serviceId:PluginBasic1"
---]]
 
 -- Exports for standard API
 
