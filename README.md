@@ -144,7 +144,7 @@ Now that you have the names sorted. The first thing to do is rename all of the f
 
 Your chosen plugin name may have spaces or other characters that are not basic-filename-friendly, for example "Huawei Router Control". If that's the case, you'll need to create a "compact" version of the name to use for filenames and other things. Going with the example, you can just remove the spaces, creating "HuaweiRouterControl". You can also abbreviate or remove unnecessary words: "HuaweiRouterCtrl" or simply "HuaweiRouter". In any case, it must be free of spaces and all non-alphanumeric characters. Upper- and lowercase mix is fine, but all characters should be "low ASCII" (ASCII code < 128) and **no** international characters, Unicode, diacritical marks, etc. So basically, only upper- and lowercase A-Z and digits 0-9.
 
-Once you have a compact form of your plugin name, rename all the plugin files, giving the compact form as a replacement for "PluginBasic" in the names. For example: `D_PluginBasic1.xml` becomes `D_HuaweiRouter1.xml`. The other files would become `D_HuaweiRouter1.json`, `I_HuaweiRouter1.xml`, `L_HuaWeiRouter1.lua`, and `S_HuaweiRouter1.xml`.
+Once you have a compact form of your plugin name, rename all the plugin files, giving the compact form as a replacement for "PluginBasic" in the names. For example: `D_PluginBasic1.xml` becomes `D_HuaweiRouter1.xml`. The other files would become `D_HuaweiRouter1.json`, `I_HuaweiRouter1.xml`, `L_HuaWeiRouter1.lua`, and `S_HuaweiRouter1.xml`. The `D_PFB_PluginBasic1.lua` file would be named `D_PFB_HuaweiRouter1.lua`.
 
 Notice that the example preserves the prefix (`D_`, `I_`, etc.), the "1" that precedes the suffix, and the suffix itself. It's very important that you keep that straight.
 
@@ -160,7 +160,12 @@ Simple: *in each file*, global change the string "PluginBasic" to the compact na
 
 ### Step Six: Other Code Changes and Checks
 
-Make the following additional code changes in your L_ file (the Lua implementation module... more on that below):
+Make the following change in the I_ implementation file:
+
+* Change the value of the `PLUGIN_MODULE_NAME` variable to the name of your Lua main module. This is generally just the name of your implementation Lua file (e.g. L_HuaweiRouter1.lua) without the `.lua` suffix: `L_HuaweiRouter1`.
+
+Make the following additional code changes in your L_ file (the Lua implementation module--do NOT modify the L_PFB_ file!):
+
 * Change the definition of `_PLUGIN_NAME` to the friendly name of your plugin (spaces etc. OK here)
 * Make sure `_PLUGIN_COMPACT` has the same *compact name* that was used in steps three and five above.
 
@@ -183,6 +188,8 @@ You should now see your device on the Devices list, in the "No Room" section. If
 ### Step Eight: Check the LuaUPnP log
 
 Examine the LuaUPnP log, which is `/var/log/cmh/LuaUPnP.log`. I don't recommend using `scp` to copy it, but you can `ssh` into your Vera and use the `less` command (e.g. `less /var/log/cmh/LuaUPnP.log`) to browse it. You can also browse it using a browser via local HTTP access: `http://your-vera-local-ip/cgi-bin/cmh/log.sh?Device=LuaUPnP` (this is my preferred method).
+
+> The LuaView plugin now offers browsing of the log file, even via remote access, with search.
 
 Search for the compact name and you'll pretty quickly find where the plugin starts. Here's what it looks like for the unmodified plugin framework:
 
@@ -295,7 +302,7 @@ In order to make the plugin do the work you want it to do, you will need to modi
 
 ### `start( dev )`
 
-You will always need to modify this function. It is called to initialize and start your plugin, so you need to modify it to contain whatever needs to be done to get the work started. All of your startup code should go in here. **Do not modify the `startup` or `functions` sections of `I_PluginBasic1.xml`.**
+You will always need to modify this function. It is called to initialize and start your plugin, so you need to modify it to contain whatever needs to be done to get the work started. All of your startup code should go in here.
 
 Your `start` function should return two values: a boolean (`true` or `false`) success code, and a message (or `nil`). If the first value returned is anything other than `false`, the framework assumes that your plugin code has started successfully and will clear the device error state and return a success indication to Luup. If the value is `false`, or if an error is thrown by your code, the device will enter error state and the message provided returned to Luup to be displayed as a device error.
 
@@ -311,11 +318,11 @@ Your startup code must initialize all plugin-specific data. You can declare any 
 
 ### `runOnce( dev )`
 
-The `runOnce()` function is called the first time your plugin code runs in a new device. Use this for any one-time initializations you may need to perform. It will not be called again, unless the `Configured` state variable is set to anything other than "1" (digit one). The framework manages this state variable and decides whether or not `runOnce()` needs to be called, so do not call it directly from your own startup code, and do not manipulate `Configured` in any way.
+The `runOnce()` function, if defined, is called the first time your plugin code runs in a new device. Use this for any one-time initializations you may need to perform when the device is first created. It will not be called again, unless the `Configured` state variable is set to anything other than "1" (digit one). The framework manages this state variable and decides whether or not `runOnce()` needs to be called, so do not call it directly from your own startup code, and do not manipulate `Configured` in any way.
 
 ### `checkVersion( dev )`
 
-The `checkVersion()` function is expected to return a boolean (true/false) indicating that the current running Vera/Luup firmware is compatible with the plugin. If `false` is returned, the startup of the plugin will be aborted. If anything other than `false` is return, the plugin will be started.
+The `checkVersion()` function, if defined, is expected to return a boolean (true/false) indicating that the current running Vera/Luup firmware is compatible with the plugin. If `false` is returned, the startup of the plugin will be aborted. If anything other than `false` is return, the plugin will be started.
 
 ## Getting To Work
 
