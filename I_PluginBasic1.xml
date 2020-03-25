@@ -1,61 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- I_PluginBasic1.xml -->
 <implementation>
-	<functions>
-		--[[ ------------------------------------------------------------------
-		Basic Plugin Framework
-		YOURDOMAIN-NAME -- global change this string to your domain name (lower
-						   case) in all files. If you don't own an Internet
-						   domain name, use "yourveracommunityname-vera".
-						   DO NOT USE micasaverde-com, upnp-org, futzle-com,
-						   toggledbits-com, etc. as that is highjacking of
-						   others' namespace!
-		PluginBasic1 -- global change this string to your plugin's compact
-						name.
-		*** REFER TO THE README.md FILE FOR IMPORTANT INFO BEFORE MODIFYING ***
-		------------------------------------------------------------------ --]]
-
-		local PLUGIN_MODULE_NAME = "L_PluginBasic1" -- !!! Modify this to match the Lua main module name for the plugin (no .lua suffix here!)
-
-		--[[ ===== D O   N O T   M O D I F Y   B E L O W   T H I S   L I N E --]]
-
-		local lf = PLUGIN_MODULE_NAME:gsub( "^L_", "L_PFB_" )
-		if not openLuup then
-			os.execute( "pluto-lzo d /etc/cmh-ludl/"..lf..".lua.lzo /etc/cmh-ludl/"..lf..".lua" )
-		end
-		_,PFB = pcall( require, lf )
-		if type(PFB) ~= "table" then error( "Cannot load PFB library module " .. lf .. ".lua" ) end
-		if PFB.SIGNATURE ~= "23b685bc-3d2e-11ea-85f9-035ca9e8fad3" then error( "Invalid PFB signature in " .. lf .. ".lua" ) end
-
-		function _WatchCb( dev, sid, var, oldVal, newVal )
-			PFB.impl.P("I_._WatchCb(%1,%2,%3,%4,%5)", dev, sid, var, oldVal, newVal)
-			return PFB.impl.handleWatchCb( dev, sid, var, oldVal, newVal )
-		end
-
-		function _DelayCb( parm )
-			PFB.impl.P("I_._DelayCb(%1)", parm)
-			return PFB.impl.handleDelayCb( parm )
-		end
-
-		function _RequestCb( req, parms, of )
-			PFB.impl.P("I_._RequestCb(%1,%2,%3)", req, parms, of)
-			return PFB.impl.handleRequestCb( req, parms, of )
-		end
-
-		function _JobCb( jbt )
-			PFB.impl.P("I_._JobCb(%1)", jbt)
-			return PFB.impl.handleJobCb( jbt )
-		end
-
-		function _PFBStart( dev )
-			PFB.impl.P("I_._PFBStart(%1)", dev)
-			return PFB.impl.pluginStart( dev, PLUGIN_MODULE_NAME )
-		end
-
-		--[[ ===== D O   N O T   M O D I F Y   A B O V E   T H I S   L I N E --]]
-	</functions>
-	<startup>_PFBStart</startup><!-- DO NOT MODIFY -->
-	<incoming><lua>PFB.impl.handleIncomingCb( lul_device, lul_data )</lua></incoming><!-- DO NOT MODIFY -->
+	<files>L_PluginBasicImpl1.lua</files>
+	<startup>_Start</startup>
+	<incoming><lua>_IncomingCb( lul_device, lul_data )</lua></incoming>
 	<actionList>
 		<!-- DO NOT MODIFY FROM THIS LINE TO END OF SECTION
 			 ADD YOUR ACTIONS BELOW THE END OF THIS "DO NOT MODIFY" SECTION -->
@@ -64,14 +12,14 @@
 			<serviceId>urn:YOURDOMAIN-NAME:serviceId:PluginBasic1</serviceId>
 			<name>SetDebug</name>
 			<run>
-				return PFB.impl.actionSetDebug( lul_device, lul_settings )
+				return _ActionSetDebug( lul_device, lul_settings )
 			</run>
 		</action>
 		<action>
 			<serviceId>urn:YOURDOMAIN-NAME:serviceId:PluginBasic1</serviceId>
 			<name>SetLogLevel</name>
 			<run>
-				return PFB.impl.actionSetLogLevel( lul_device, lul_settings )
+				return _ActionSetLogLevel( lul_device, lul_settings )
 			</run>
 		</action>
 		<!-- END OF DO NOT MODIFY SECTION FOR ACTIONLIST -->
@@ -85,7 +33,7 @@
 				-- That is, you should clone this block, and then just modify the action name
 				-- in the "name" tag above and the dispatch call below (they must match).
 				-- This will eventually call your plugin's action implementation.
-				return PFB.impl.pluginDispatchAction( "Example", lul_device, lul_settings )
+				return PFB.impl.dispatchAction( "Example", lul_device, lul_settings )
 			</run>
 		</action>
 <!-- !!! Place your action declarations above this line. -->
