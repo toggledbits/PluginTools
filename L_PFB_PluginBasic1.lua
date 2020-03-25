@@ -7,7 +7,7 @@ M.device = false
 local logLevels = { ERR=1, ERROR=1, WARN=2, WARNING=2, NOTICE=3, INFO=4, DEBUG1=5, DEBUG2=6,
 					DEBUG3=7, DEBUG4=8, DEBUG5=9, DEBUG6=10,
 					err=1, error=1, warn=2, warning=2, notice=3, info=4, debug1=5, debug2=6,
-					debug3=7, debug4=8, debug5=9, debug6=10
+					debug3=7, debug4=8, debug5=9, debug6=10,
 					DEFAULT=4, default=4,
 					[1]='err', [2]='warn', [3]='notice', [4]='info', [5]='debug1', [6]='debug2',
 					[7]='debug3', [8]='debug4', [9]='debug5', [10]='debug6'
