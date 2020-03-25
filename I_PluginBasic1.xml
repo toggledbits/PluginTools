@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- I_PluginBasic1.xml -->
+<!-- DO NOT MODIFY ANYTHING IN THIS FILE EXCEPT THE CUSTOM ACTION SECTION BELOW! -->
 <implementation>
 	<files>L_PluginBasicFramework.lua</files>
 	<startup>_Start</startup>
 	<incoming><lua>_IncomingCb( lul_device, lul_data )</lua></incoming>
 	<actionList>
-		<!-- DO NOT MODIFY FROM THIS LINE TO END OF SECTION
-			 ADD YOUR ACTIONS BELOW THE END OF THIS "DO NOT MODIFY" SECTION -->
-		<!-- SetLogLevel -- defined in default service, DO NOT REMOVE -->
+		<!-- DO NOT MODIFY THESE TWO ACTIONS (DOMAIN NAME GLOBAL CHANGE IS OK) -->
 		<action>
 			<serviceId>urn:YOURDOMAIN-NAME:serviceId:PluginBasic1</serviceId>
 			<name>SetDebug</name>
@@ -24,19 +23,21 @@
 		</action>
 		<!-- END OF DO NOT MODIFY SECTION FOR ACTIONLIST -->
 
-<!-- !!! Place your action declarations below this line. -->
+<!-- ============= PLACE YOUR CUSTOM ACTIONS BELOW THIS LINE ============= -->
+
 		 <action>
 			<serviceId>urn:YOURDOMAIN-NAME:serviceId:PluginBasic1</serviceId>
 			<name>Example</name>
 			<run>
 				-- Pretty much every action (run or job) should be implemented this way.
 				-- That is, you should clone this block, and then just modify the action name
-				-- in the "name" tag above and the dispatch call below (they must match).
+				-- in the "name" tag above and the dispatchAction call below (they must match).
 				-- This will eventually call your plugin's action implementation.
 				return PFB.impl.dispatchAction( "Example", lul_device, lul_settings )
 			</run>
 		</action>
-<!-- !!! Place your action declarations above this line. -->
+
+<!-- ============= PLACE YOUR CUSTOM ACTIONS ABOVE THIS LINE ============= -->
 
 	</actionList>
 </implementation>
