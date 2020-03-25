@@ -8,11 +8,6 @@
 
 ------------------------------------------------------------------ --]]
 
-luup.log("RUNNING L_PluginBasicImpl1.lua",2)
-for k,v in pairs(_G) do luup.log( k.."="..tostring(v),2) end
-
---[[ =============================================================== --]]
-
 PFB = {}
 PFB.VERSION = 20085
 PFB.SIGNATURE = "23b685bc-3d2e-11ea-85f9-035ca9e8fad3"
