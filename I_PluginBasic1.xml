@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- I_PluginBasic1.xml -->
 <implementation>
-	<files>L_PluginBasicImpl1.lua</files>
+	<files>L_PluginBasicFramework.lua</files>
 	<startup>_Start</startup>
 	<incoming><lua>_IncomingCb( lul_device, lul_data )</lua></incoming>
 	<actionList>
