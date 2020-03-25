@@ -6,14 +6,14 @@ _PLUGIN_NAME = "Plugin Framework Basic"	-- !!! Set me!
 
 -- _PLUGIN_IDENT: !!! Set this to the short name of your plugin. Generally,
 --                this should match the filenames of the plugin files, without
---                the prefix and suffix... L_PluginBasic1.lua ==> PluginBasic
+--                the prefix and suffix... L_PluginBasic1.lua ==> PluginBasic1
 
-_PLUGIN_COMPACT = "PluginBasic"
+_PLUGIN_COMPACT = "PluginBasic1"
 
 -- _PLUGIN_REQUESTNAME: !!! Set this to name to be used in the "id" field of
 --                      Luup requests for the plugin. Those requests would look
 --                      like:
---                      http://vera-ip/port_3480/data_request?id=lr_PluginBasic
+--                      http://vera-ip/port_3480/data_request?id=lr_PluginBasic1
 -- Default is same as compact, which is usually good and needs no changes.
 _PLUGIN_REQUESTNAME = _PLUGIN_COMPACT
 
@@ -123,6 +123,8 @@ function start( pdev )
 		function( tid, dev )
 			PFB.log( 'notice', "Dev #%1 at 60 seconds after startup.", dev )
 			PFB.delay.cancel( tid )
+			-- Call our action just for fun
+			luup.call_action( MYSID, "Example", { newValue=os.time(), force=1 }, dev )
 		end,
 		pdev
 	)
@@ -189,6 +191,7 @@ end
 -- not "local", so it can be seen from I_PluginBasic1.xml
 function actionExample( pdev, parms )
 	D("actionExample(%1,%2)", pdev, parms)
-	-- Use: luup.call_action( "urn:yourdomain-name:serviceId:PluginBasic1", "Example", { newValue="23" }, n )
+	L("The Example action has been invoked! Parameters=%1", parms)
+	-- Use: luup.call_action( "urn:YOURDOMAIN-NAME:serviceId:PluginBasic1", "Example", { newValue="23" }, n )
 	PFB.var.set( "ExampleVariable", parms.newValue )
 end
