@@ -1,6 +1,6 @@
 # Plugin Framework Basic - Template for Simple Vera/Luup Plugins
 
-This document corresponds to framework version 19184.
+This document corresponds to framework version 20085.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -61,7 +61,26 @@ This document corresponds to framework version 19184.
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-## Before You Begin (DO NOT SKIP THIS SECTION)
+## Upgrading from Earlier Versions
+
+This section applies only to current users of the framework upgrading applications to the current version.
+
+If you are a new framework user, please go on to "Getting Started -- Before You Begin".
+
+### Upgrading from Versions Earlier than 20085
+
+For version 20085, the structure of the implementation and framework module was changed slightly. This requires you to update your implementation file to the new form, and install/use the new library module in place of the old.
+
+If you are upgrading from a version of the framework earlier than 20085, here is what you need to change:
+
+1. From your existing implementation file (`I_xxx.xml`), copy your `<action>` definitions (do not copy the framework-defined actions, just those that you defined) into the new/template version of `I_PluginBasic1.xml`. Then rename the modified template file to the name of your implementation file.
+2. You may discard all of the remaining template/example files, but keep `L_PluginBasicFramework.lua`. This is the new version's module file.
+3. Discard your `L_PFB_xxxx.lua` file (the previous framework version's implementation).
+
+## Getting Started -- Before You Begin
+
+**NEW USERS ARE ADVISED TO NOT SKIP THIS SECTION!**
+
 There are a few things you need to know before you dive in. **Please make sure you take the time to read and understand this section.** It's important. You'll bypass a lot of weird bugs and troublesome roadblocks if have the basic concepts I'm about to explain firmly under your belt.
 
 ### Services
@@ -144,7 +163,9 @@ Now that you have the names sorted. The first thing to do is rename all of the f
 
 Your chosen plugin name may have spaces or other characters that are not basic-filename-friendly, for example "Huawei Router Control". If that's the case, you'll need to create a "compact" version of the name to use for filenames and other things. Going with the example, you can just remove the spaces, creating "HuaweiRouterControl". You can also abbreviate or remove unnecessary words: "HuaweiRouterCtrl" or simply "HuaweiRouter". In any case, it must be free of spaces and all non-alphanumeric characters. Upper- and lowercase mix is fine, but all characters should be "low ASCII" (ASCII code < 128) and **no** international characters, Unicode, diacritical marks, etc. So basically, only upper- and lowercase A-Z and digits 0-9.
 
-Once you have a compact form of your plugin name, rename all the plugin files, giving the compact form as a replacement for "PluginBasic" in the names. For example: `D_PluginBasic1.xml` becomes `D_HuaweiRouter1.xml`. The other files would become `D_HuaweiRouter1.json`, `I_HuaweiRouter1.xml`, `L_HuaWeiRouter1.lua`, and `S_HuaweiRouter1.xml`. The `D_PFB_PluginBasic1.lua` file would be named `D_PFB_HuaweiRouter1.lua`.
+Once you have a compact form of your plugin name, rename all the plugin files, giving the compact form as a replacement for "PluginBasic" in the names. For example: `D_PluginBasic1.xml` becomes `D_HuaweiRouter1.xml`. The other files would become `D_HuaweiRouter1.json`, `I_HuaweiRouter1.xml`, `L_HuaWeiRouter1.lua`, and `S_HuaweiRouter1.xml`. 
+
+**IMPORTANT:** Do *not* rename the `L_PluginBasicFramework.lua` file at this time. You may or may not do that later, but for now, leave it as-is.
 
 Notice that the example preserves the prefix (`D_`, `I_`, etc.), the "1" that precedes the suffix, and the suffix itself. It's very important that you keep that straight.
 
@@ -156,15 +177,11 @@ After you've done all the files, move on.
 
 ### Step Five: Global Change #2 -- Plugin Name
 
-Simple: *in each file*, global change the string "PluginBasic" to the compact name you used in step **three**. That is, change the search string to the same as that you used in all the filenames.
+Simple: *in each file*, global change the string "PluginBasic1" to the compact name you used in Step **Three**. That is, change the search string to the same as that you used in all the filenames.
 
 ### Step Six: Other Code Changes and Checks
 
-Make the following change in the I_ implementation file:
-
-* Change the value of the `PLUGIN_MODULE_NAME` variable to the name of your Lua main module. This is generally just the name of your implementation Lua file (e.g. L_HuaweiRouter1.lua) without the `.lua` suffix: `L_HuaweiRouter1`.
-
-Make the following additional code changes in your L_ file (the Lua implementation module--do NOT modify the L_PFB_ file!):
+Make the following code changes in your L_ file (the Lua implementation module--do NOT modify the `L_PluginBasicFramework.lua` file!):
 
 * Change the definition of `_PLUGIN_NAME` to the friendly name of your plugin (spaces etc. OK here)
 * Make sure `_PLUGIN_COMPACT` has the same *compact name* that was used in steps three and five above.
