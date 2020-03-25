@@ -462,7 +462,7 @@ function _Start( dev )
 	end
 
 	-- Register plugin request handler
-	luup.register_handler("_RequestCb", pluginFlags.module._PLUGIN_REQUESTNAME or pluginFlags.module._PLUGIN_COMPACT)
+	luup.register_handler("_RequestCb", pluginFlags.module._PLUGIN_REQUESTNAME or pluginName)
 
 	local success,ret,msg,name = pcall( pluginFlags.module.start, dev )
 	if not success then
