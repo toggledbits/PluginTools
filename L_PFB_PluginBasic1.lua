@@ -1,7 +1,7 @@
 local M = {}
 
-M.VERSION = 20022
-M.SIGNATURE = "23b685bc-3d2e-11ea-85f9-035ca9e8fad3"
+M.VERSION = 20268
+M.SIGNATURE = "23b685bc-3d2e-11ea-85f9-035ca9e800d3"
 M.device = false
 
 local logLevels = { ERR=1, ERROR=1, WARN=2, WARNING=2, NOTICE=3, INFO=4, DEBUG1=5, DEBUG2=6,
@@ -316,15 +316,19 @@ local function handleWatchCb( dev, svc, var, oldVal, newVal )
 end
 
 local function pluginIsOpenLuup()
-	if pluginFlags.openluup == nil then
+	if not luup.openLuup then -- this is always defined on openLuup, so Vera is fast exit
+		return false
+	elseif pluginFlags.openluup == nil then
 		pluginFlags.openluup = false
-		for _,v in pairs( luup.devices ) do
+		for k,v in pairs( luup.devices ) do
 			if v.device_type == "openLuup" and v.device_num_parent == 0 then
-				pluginFlags.openluup = true
+				pluginFlags.openluup = k
+				break
 			end
 		end
+		P("pluginIsOpenLuup() openluup=%1", pluginFlags.openluup )
 	end
-	return pluginFlags.openluup
+	return pluginFlags.openluup ~= false, pluginFlags.openluup
 end
 
 local function getInstallPath()
@@ -333,7 +337,9 @@ local function getInstallPath()
 			local loader = require "openLuup.loader"
 			if loader.find_file then
 				-- This may be a bit ropey. Is AltAppStore always installed on openLuup? Need to ask akbooer
-				installPath = loader.find_file( "D_AltAppStore.xml" ):gsub( "D_AltAppStore.xml$", "" )
+				pluginFlags.installPath = loader.find_file( "D_AltAppStore.xml" ):gsub( "D_AltAppStore.xml$", "" )
+			else
+				error "Failed to load openLuup.loader; please update openLuup"
 			end
 		else
 			pluginFlags.installPath = "/etc/cmh-ludl/"

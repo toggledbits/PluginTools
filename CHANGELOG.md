@@ -1,5 +1,12 @@
 # Change Log
 
+## 20268
+
+* Fix impl file attempt to detect openLuup (caused benign error message in openLuup log file).
+* Fix openLuup detection in PFB.platform.isOpenLuup() to be faster on Vera, store and return device number on openLuup.
+* Fix store of install path in PFB.platform.getInstallPath().
+* Fix syntax error in logLevels.
+
 ## 20022
 
 * BREAKING CHANGE: The majority of the framework implementation has been moved to a Lua file called `L_PFB_xxx.lua`, where *xxx* is the compact name of your plugin. It is provided as `L_PFB_PluginBasic1.lua`, and must be renamed. This keeps each plugin's copy of the framework separate, in case they rely on different version. Having the majority of the implementation in this Lua file further isolates the code--you should not be making *any* changes in this file at all--and makes debugging and development easier (working in Lua code embedded in the XML implementation file is problematic).

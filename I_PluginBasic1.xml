@@ -23,9 +23,10 @@
 		if not luup.openLuup then
 			os.execute( "pluto-lzo d /etc/cmh-ludl/"..lf..".lua.lzo /etc/cmh-ludl/"..lf..".lua" )
 		end
-		_,PFB = pcall( require, lf )
-		if type(PFB) ~= "table" then error( "Cannot load PFB library module " .. lf .. ".lua" ) end
-		if PFB.SIGNATURE ~= "23b685bc-3d2e-11ea-85f9-035ca9e8fad3" then error( "Invalid PFB signature in " .. lf .. ".lua" ) end
+		local st
+		st,PFB = pcall( require, lf )
+		if not (st and type(PFB) == "table") then luup.log( "Cannot load PFB library module " .. lf .. ".lua: " .. tostring(PFB) ) error "fail" end
+		if PFB.SIGNATURE ~= "23b685bc-3d2e-11ea-85f9-035ca9e800d3" then error( "Invalid PFB signature in " .. lf .. ".lua" ) end
 
 		function _WatchCb( dev, sid, var, oldVal, newVal )
 			PFB.impl.P("I_._WatchCb(%1,%2,%3,%4,%5)", dev, sid, var, oldVal, newVal)

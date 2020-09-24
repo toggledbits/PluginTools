@@ -85,7 +85,7 @@ end
 function start( pdev )
 	D("start(%1)", pdev)
 
-	if PFB.VERSION < 20022 then
+	if PFB.VERSION < 20268 then
 		return false, "Please update PFB", _PLUGIN_NAME
 	end
 
@@ -95,6 +95,8 @@ function start( pdev )
 	PFB.var.init( "ExampleVariable", "Initial Value" )
 
 	-- Get your plugin rolling!
+	PFB.log( "info", "Running on openLuup? %1", PFB.platform.isOpenLuup())
+	PFB.log( "info", "Install path is %1", PFB.platform.getInstallPath())
 
 	-- Example: Make sure we're Enabled...
 	if PFB.var.getNumeric( "Enabled", 1 ) == 0 then
