@@ -20,7 +20,7 @@
 		--[[ ===== D O   N O T   M O D I F Y   B E L O W   T H I S   L I N E --]]
 
 		local lf = PLUGIN_MODULE_NAME:gsub( "^L_", "L_PFB_" )
-		if not openLuup then
+		if not luup.openLuup then
 			os.execute( "pluto-lzo d /etc/cmh-ludl/"..lf..".lua.lzo /etc/cmh-ludl/"..lf..".lua" )
 		end
 		_,PFB = pcall( require, lf )
