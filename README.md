@@ -422,7 +422,7 @@ With that in mind, on to step 3... declaring our action implementation in the pl
 			<serviceId>urn:upnp-org:serviceId:SwitchPower1</serviceId>
 			<name>SetTarget</name>
 			<run>
-				return pluginModule.actionSetTarget( lul_device, lul_settings )
+				return PFB.impl.actionSetTarget( lul_device, lul_settings )
 			</run>
 		</action>
 ```
